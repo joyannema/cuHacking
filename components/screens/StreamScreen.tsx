@@ -4,8 +4,10 @@ import { useRef, useState } from "react";
 import PaperDecor from "../PaperDecor";
 import NoteCard from "../NoteCard";
 import FolderCard from "../FolderCard";
-import { PAPER_BG, PAPER_BG_SIZE } from "@/lib/data";
+import { PAPER_BG, PAPER_BG_SIZE, seededRand } from "@/lib/data";
 import type { CategoryMeta, Note } from "@/lib/types";
+
+const STREAM_ALIGNS: Array<"flex-start" | "flex-end" | "center"> = ["flex-start", "flex-end", "center"];
 
 export default function StreamScreen({
   notes,
@@ -136,11 +138,27 @@ export default function StreamScreen({
           <div style={{ flex: 1, height: 0, borderTop: "1.6px dashed oklch(0.68 0.02 60)" }} />
         </div>
 
-        <div style={{ padding: "8px 14px 20px" }}>
-          <div style={{ columnCount: 2, columnGap: 12 }}>
-            {notes.map((note) => (
-              <NoteCard key={note.id} note={note} onClick={() => onOpenNote(note.id)} />
-            ))}
+        <div style={{ padding: "8px 0 20px" }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {notes.map((note, i) => {
+              const align = STREAM_ALIGNS[i % 3];
+              const nudge = seededRand(note.id * 19 + 12, -4, 4);
+              return (
+                <div
+                  key={note.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: align,
+                    marginBottom: 6,
+                    transform: `translateX(${nudge}px)`,
+                    marginLeft: align === "flex-start" ? "6%" : undefined,
+                    marginRight: align === "flex-end" ? "6%" : undefined,
+                  }}
+                >
+                  <NoteCard note={note} variant="stream" onClick={() => onOpenNote(note.id)} />
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

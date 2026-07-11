@@ -1,16 +1,46 @@
+import type { ReactNode } from "react";
+
 export default function TabBar({
   active,
   onHome,
+  onTodos,
   onCapture,
+  onJournal,
   onSettings,
 }: {
-  active: "stream" | "settings";
+  active: "stream" | "todos" | "journal" | "settings";
   onHome: () => void;
+  onTodos: () => void;
   onCapture: () => void;
+  onJournal: () => void;
   onSettings: () => void;
 }) {
-  const homeStroke = active === "stream" ? "oklch(0.28 0.02 55)" : "oklch(0.4 0.03 60)";
-  const settingsStroke = active === "settings" ? "oklch(0.28 0.02 55)" : "oklch(0.4 0.03 60)";
+  const navIcon = (
+    isActive: boolean,
+    onClick: () => void,
+    icon: (stroke: string, strokeWidth: number) => ReactNode
+  ) => {
+    const stroke = isActive ? "oklch(0.28 0.02 55)" : "oklch(0.4 0.03 60)";
+    const strokeWidth = isActive ? 2 : 1.8;
+    return (
+      <button
+        onClick={onClick}
+        style={{
+          width: 46,
+          height: 46,
+          borderRadius: "50%",
+          border: `1.5px solid ${isActive ? "oklch(0.75 0.03 65)" : "oklch(0.8 0.02 65)"}`,
+          background: isActive ? "oklch(0.99 0.01 80)" : "oklch(0.98 0.01 80)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+        }}
+      >
+        {icon(stroke, strokeWidth)}
+      </button>
+    );
+  };
 
   return (
     <div
@@ -28,38 +58,21 @@ export default function TabBar({
         pointerEvents: "none",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 22, pointerEvents: "auto" }}>
-        <button
-          onClick={onHome}
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: "50%",
-            border: `1.5px solid ${active === "stream" ? "oklch(0.75 0.03 65)" : "oklch(0.8 0.02 65)"}`,
-            background: active === "stream" ? "oklch(0.99 0.01 80)" : "oklch(0.98 0.01 80)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
+      <div style={{ display: "flex", alignItems: "center", gap: 14, pointerEvents: "auto" }}>
+        {navIcon(active === "stream", onHome, (stroke, sw) => (
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M4 11L12 4L20 11"
-              stroke={homeStroke}
-              strokeWidth={active === "stream" ? 2 : 1.8}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M6 10V20H18V10"
-              stroke={homeStroke}
-              strokeWidth={active === "stream" ? 2 : 1.8}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            <path d="M4 11L12 4L20 11" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M6 10V20H18V10" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        </button>
+        ))}
+
+        {navIcon(active === "todos", onTodos, (stroke, sw) => (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <rect x="5" y="3" width="14" height="18" rx="2" stroke={stroke} strokeWidth={sw} />
+            <path d="M9 3h6v2.5H9z" fill={stroke} />
+            <path d="M8.5 12l1.8 1.8L15 9.5" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ))}
 
         <button
           onClick={onCapture}
@@ -97,30 +110,25 @@ export default function TabBar({
           </div>
         </button>
 
-        <button
-          onClick={onSettings}
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: "50%",
-            border: `1.5px solid ${active === "settings" ? "oklch(0.75 0.03 65)" : "oklch(0.8 0.02 65)"}`,
-            background: active === "settings" ? "oklch(0.99 0.01 80)" : "oklch(0.98 0.01 80)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="8" r="3.6" stroke={settingsStroke} strokeWidth={active === "settings" ? 1.8 : 1.8} />
+        {navIcon(active === "journal", onJournal, (stroke, sw) => (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path
-              d="M4.5 19.5c1.4-3.8 4.3-5.7 7.5-5.7s6.1 1.9 7.5 5.7"
-              stroke={settingsStroke}
-              strokeWidth="1.8"
-              strokeLinecap="round"
+              d="M12 5.5c-2-1.1-4.3-1.4-6.5-1v12.5c2.2-0.4 4.5-0.1 6.5 1c2-1.1 4.3-1.4 6.5-1V4.5c-2.2-0.4-4.5-0.1-6.5 1z"
+              stroke={stroke}
+              strokeWidth={sw === 2 ? 1.6 : 1.6}
+              strokeLinejoin="round"
+              fill="none"
             />
+            <path d="M12 5.5v12.5" stroke={stroke} strokeWidth="1.4" />
           </svg>
-        </button>
+        ))}
+
+        {navIcon(active === "settings", onSettings, (stroke, sw) => (
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.6" stroke={stroke} strokeWidth={sw} />
+            <path d="M4.5 19.5c1.4-3.8 4.3-5.7 7.5-5.7s6.1 1.9 7.5 5.7" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        ))}
       </div>
     </div>
   );

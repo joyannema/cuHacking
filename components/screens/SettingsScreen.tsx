@@ -1,14 +1,24 @@
 import PaperDecor from "../PaperDecor";
 import { PAPER_BG, PAPER_BG_SIZE } from "@/lib/data";
+import type { Profile } from "@/lib/types";
 
-const SETTINGS_ROWS = [
-  { icon: "👤", label: "account" },
-  { icon: "🔔", label: "notifications" },
-  { icon: "🔒", label: "privacy" },
-  { icon: "💬", label: "help & feedback" },
-];
+export default function SettingsScreen({
+  profile,
+  onSignOut,
+  onGoAccount,
+}: {
+  profile: Profile;
+  onSignOut: () => void;
+  onGoAccount: () => void;
+}) {
+  const settingsRows = [
+    { icon: "👤", label: "account", onClick: onGoAccount },
+    { icon: "🔔", label: "notifications", onClick: () => {} },
+    { icon: "🔒", label: "privacy", onClick: () => {} },
+    { icon: "💬", label: "help & feedback", onClick: () => {} },
+  ];
+  const initial = (profile.name[0] || "A").toUpperCase();
 
-export default function SettingsScreen({ onSignOut }: { onSignOut: () => void }) {
   return (
     <div
       style={{
@@ -34,13 +44,18 @@ export default function SettingsScreen({ onSignOut }: { onSignOut: () => void })
       </svg>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 150px" }}>
-        <div
+        <button
+          onClick={onGoAccount}
           style={{
+            width: "100%",
+            boxSizing: "border-box",
+            textAlign: "left",
+            border: "1px solid oklch(0.88 0.015 70)",
+            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             gap: 12,
             background: "oklch(0.98 0.01 80)",
-            border: "1px solid oklch(0.88 0.015 70)",
             borderRadius: 16,
             padding: 16,
             marginBottom: 22,
@@ -59,26 +74,32 @@ export default function SettingsScreen({ onSignOut }: { onSignOut: () => void })
               fontWeight: 700,
               color: "oklch(0.99 0.005 80)",
               fontSize: 16,
+              flexShrink: 0,
             }}
           >
-            A
+            {initial}
           </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 14, color: "oklch(0.26 0.02 55)" }}>alex rivera</span>
-            <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10.5, color: "oklch(0.5 0.03 60)" }}>alex@synapse.app</span>
+          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 14, color: "oklch(0.26 0.02 55)" }}>{profile.name}</span>
+            <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10.5, color: "oklch(0.5 0.03 60)" }}>@{profile.username}</span>
           </div>
-        </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M9 4L17 12L9 20" stroke="oklch(0.65 0.02 60)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
 
         <div style={{ display: "flex", flexDirection: "column" }}>
-          {SETTINGS_ROWS.map((row, i) => (
+          {settingsRows.map((row, i) => (
             <div
               key={row.label}
+              onClick={row.onClick}
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
                 padding: "15px 2px",
-                borderBottom: i < SETTINGS_ROWS.length - 1 ? "1.4px dashed oklch(0.85 0.015 70)" : undefined,
+                cursor: "pointer",
+                borderBottom: i < settingsRows.length - 1 ? "1.4px dashed oklch(0.85 0.015 70)" : undefined,
               }}
             >
               <span style={{ fontSize: 16 }}>{row.icon}</span>

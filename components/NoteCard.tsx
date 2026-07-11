@@ -1,7 +1,15 @@
-import { CATEGORY_LABELS, CATEGORY_PALETTE, CLIP_PRESETS, seededRand } from "@/lib/data";
+import { CATEGORY_LABELS, CATEGORY_PALETTE, CLIP_PRESETS, generateTitle, seededRand } from "@/lib/data";
 import type { Note } from "@/lib/types";
 
-export default function NoteCard({ note, onClick }: { note: Note; onClick: () => void }) {
+export default function NoteCard({
+  note,
+  onClick,
+  variant = "grid",
+}: {
+  note: Note;
+  onClick: () => void;
+  variant?: "grid" | "stream";
+}) {
   const pal = CATEGORY_PALETTE[note.colorIdx % CATEGORY_PALETTE.length];
   const rot = seededRand(note.id * 3 + 1, -3.2, 3.2);
   const mb = seededRand(note.id * 7 + 2, 14, 28);
@@ -9,6 +17,7 @@ export default function NoteCard({ note, onClick }: { note: Note; onClick: () =>
   const tapeRot = seededRand(note.id * 11 + 4, -8, 8);
   const clip = CLIP_PRESETS[note.id % CLIP_PRESETS.length];
   const hue = 80 + note.colorIdx * 40;
+  const title = note.title || generateTitle(note.text, note._titleSeed);
 
   return (
     <div
@@ -17,7 +26,7 @@ export default function NoteCard({ note, onClick }: { note: Note; onClick: () =>
         position: "relative",
         breakInside: "avoid",
         display: "inline-block",
-        width: "100%",
+        width: variant === "stream" ? "76%" : "100%",
         boxSizing: "border-box",
         marginBottom: mb,
         background: "oklch(0.985 0.008 80)",
@@ -50,53 +59,82 @@ export default function NoteCard({ note, onClick }: { note: Note; onClick: () =>
           boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
         }}
       />
-      <span
-        style={{
-          display: "inline-block",
-          fontFamily: "'IBM Plex Mono',monospace",
-          fontWeight: 500,
-          fontSize: 10,
-          letterSpacing: "0.02em",
-          color: pal.fg,
-          background: pal.bg,
-          borderRadius: 20,
-          padding: "3.5px 9px",
-        }}
-      >
-        {CATEGORY_LABELS[note.category] || note.category}
-      </span>
-      <p
-        style={{
-          margin: "9px 0 8px",
-          fontFamily: "'Space Grotesk',sans-serif",
-          fontSize: 14,
-          lineHeight: 1.4,
-          color: "oklch(0.24 0.02 55)",
-          fontWeight: 500,
-        }}
-      >
-        {note.text}
-      </p>
-      <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "nowrap", overflow: "hidden", marginBottom: 6 }}>
+        <span
+          style={{
+            display: "inline-block",
+            flexShrink: 0,
+            fontFamily: "'IBM Plex Mono',monospace",
+            fontWeight: 500,
+            fontSize: 9,
+            letterSpacing: "0.02em",
+            color: pal.fg,
+            background: pal.bg,
+            borderRadius: 20,
+            padding: "3px 8px",
+          }}
+        >
+          {CATEGORY_LABELS[note.category] || note.category}
+        </span>
         {note.tags.map((tag) => (
           <span
             key={tag}
             style={{
+              flexShrink: 0,
               fontFamily: "'IBM Plex Mono',monospace",
-              fontSize: 9.5,
+              fontSize: 8.5,
               color: "oklch(0.45 0.03 60)",
               background: "oklch(0.95 0.01 75 / 0.7)",
               borderRadius: 4,
               padding: "2px 6px",
+              whiteSpace: "nowrap",
             }}
           >
             #{tag}
           </span>
         ))}
+        <span
+          style={{
+            marginLeft: "auto",
+            flexShrink: 0,
+            fontFamily: "'IBM Plex Mono',monospace",
+            fontSize: 8.5,
+            color: "oklch(0.58 0.02 60)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {note.time}
+        </span>
       </div>
-      <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, color: "oklch(0.58 0.02 60)" }}>
-        {note.time}
-      </span>
+      <p
+        style={{
+          margin: "0 0 3px",
+          fontFamily: "'Space Grotesk',sans-serif",
+          fontSize: 13.5,
+          fontWeight: 700,
+          color: "oklch(0.22 0.02 55)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {title}
+      </p>
+      <p
+        style={{
+          margin: 0,
+          fontFamily: "'Space Grotesk',sans-serif",
+          fontSize: 12.5,
+          lineHeight: 1.35,
+          color: "oklch(0.4 0.02 55)",
+          fontWeight: 500,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {note.text}
+      </p>
       {note.organizing && (
         <div
           style={{

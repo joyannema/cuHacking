@@ -7,18 +7,18 @@ export default function CaptureOverlay({
   isRecording,
   transcript,
   attachedPhoto,
-  caretOn,
   onClose,
   onToggleRecording,
+  onTranscriptChange,
   onToggleAttachPhoto,
   onSave,
 }: {
   isRecording: boolean;
   transcript: string;
   attachedPhoto: boolean;
-  caretOn: boolean;
   onClose: () => void;
   onToggleRecording: () => void;
+  onTranscriptChange: (value: string) => void;
   onToggleAttachPhoto: () => void;
   onSave: () => void;
 }) {
@@ -160,10 +160,26 @@ export default function CaptureOverlay({
             boxSizing: "border-box",
           }}
         >
-          <p style={{ margin: 0, fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, lineHeight: 1.55, color: "oklch(0.26 0.02 55)", fontWeight: 500 }}>
-            {transcript}
-            <span style={{ opacity: isRecording && caretOn ? 1 : 0, color: "oklch(0.68 0.14 45)" }}>|</span>
-          </p>
+          <textarea
+            value={transcript}
+            onChange={(e) => onTranscriptChange(e.target.value)}
+            placeholder="type or speak…"
+            style={{
+              width: "100%",
+              minHeight: 70,
+              boxSizing: "border-box",
+              fontFamily: "'Space Grotesk',sans-serif",
+              fontSize: 16,
+              lineHeight: 1.55,
+              color: "oklch(0.26 0.02 55)",
+              fontWeight: 500,
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              resize: "vertical",
+              padding: 0,
+            }}
+          />
           {attachedPhoto && (
             <div
               style={{

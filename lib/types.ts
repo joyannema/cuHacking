@@ -1,4 +1,13 @@
-export type Screen = "signin" | "stream" | "cabinet" | "category" | "note" | "settings";
+export type Screen =
+  | "signin"
+  | "stream"
+  | "cabinet"
+  | "category"
+  | "note"
+  | "settings"
+  | "todos"
+  | "journal"
+  | "account";
 
 export type CategorySlug =
   | "travel_prep"
@@ -17,6 +26,12 @@ export interface Note {
   time: string;
   colorIdx: number;
   organizing?: boolean;
+  title?: string;
+  _titleSeed?: number;
+  photo?: boolean;
+  isTodo?: boolean;
+  todoText?: string;
+  todoDone?: boolean;
 }
 
 export interface CategoryMeta {
@@ -24,4 +39,31 @@ export interface CategoryMeta {
   label: string;
   count: number;
   colorIdx: number;
+}
+
+export interface Profile {
+  name: string;
+  username: string;
+  email: string;
+  bio: string;
+}
+
+export type JournalElementType = "note" | "photo" | "text" | "sticker";
+
+export interface JournalElement {
+  id: number;
+  type: JournalElementType;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rot: number;
+  entryId?: number;
+  text?: string;
+  photoSrc?: string;
+  stickerKind?: string;
+}
+
+export interface JournalPage {
+  elements: JournalElement[];
 }

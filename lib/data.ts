@@ -21,16 +21,16 @@ export const PAPER_BG =
 export const PAPER_BG_SIZE = "15px 15px";
 
 export const SEED_NOTES: Note[] = [
-  { id: 1, category: "travel_prep", text: "Need to renew my passport before the trip to Japan in October.", tags: ["passport", "Japan"], time: "2m ago", colorIdx: 3 },
-  { id: 2, category: "work_expenses", text: "Team lunch at Sansotei — grab the receipt for reimbursement.", tags: ["team lunch", "$45.50"], time: "41m ago", colorIdx: 0 },
-  { id: 3, category: "car_maintenance", text: "Weird noise from front left tire again, book the shop for Friday.", tags: ["honda civic"], time: "3h ago", colorIdx: 1 },
+  { id: 1, category: "travel_prep", text: "Need to renew my passport before the trip to Japan in October.", tags: ["passport", "Japan"], time: "2m ago", colorIdx: 3, isTodo: true, todoText: "renew passport" },
+  { id: 2, category: "work_expenses", text: "Team lunch at Sansotei — grab the receipt for reimbursement.", tags: ["team lunch", "$45.50"], time: "41m ago", colorIdx: 0, isTodo: true, todoText: "submit sansotei receipt" },
+  { id: 3, category: "car_maintenance", text: "Weird noise from front left tire again, book the shop for Friday.", tags: ["honda civic"], time: "3h ago", colorIdx: 1, isTodo: true, todoText: "book shop for tire noise" },
   { id: 4, category: "gift_ideas", text: "Mira mentioned she wants that ceramic mug set from the market stall.", tags: ["mira", "birthday"], time: "yesterday", colorIdx: 4 },
   { id: 5, category: "book_notes", text: "That line about memory being a place you visit, not a thing you keep.", tags: ["quote"], time: "yesterday", colorIdx: 2 },
   { id: 6, category: "travel_prep", text: "Window seat, aisle 14 — confirmed with the airline.", tags: ["flight"], time: "2d ago", colorIdx: 3 },
-  { id: 7, category: "work_expenses", text: "Software subscription renewed, expensable under tools.", tags: ["tools", "$12"], time: "2d ago", colorIdx: 0 },
-  { id: 8, category: "car_maintenance", text: "Oil change is due in about 500 miles.", tags: ["oil change"], time: "4d ago", colorIdx: 1 },
+  { id: 7, category: "work_expenses", text: "Software subscription renewed, expensable under tools.", tags: ["tools", "$12"], time: "2d ago", colorIdx: 0, isTodo: true, todoText: "expense software subscription" },
+  { id: 8, category: "car_maintenance", text: "Oil change is due in about 500 miles.", tags: ["oil change"], time: "4d ago", colorIdx: 1, isTodo: true, todoText: "schedule oil change" },
   { id: 9, category: "recipe_ideas", text: "That miso-butter pasta Theo made — ask him for the ratio.", tags: ["pasta"], time: "5d ago", colorIdx: 5 },
-  { id: 10, category: "home_projects", text: "Repaint the bookshelf before the shelves go back up.", tags: ["diy"], time: "6d ago", colorIdx: 6 },
+  { id: 10, category: "home_projects", text: "Repaint the bookshelf before the shelves go back up.", tags: ["diy"], time: "6d ago", colorIdx: 6, isTodo: true, todoText: "repaint bookshelf" },
 ];
 
 export const CATEGORY_LABELS: Record<CategorySlug, string> = {
@@ -50,4 +50,33 @@ export function seededRand(seed: number, min: number, max: number) {
   const x = Math.sin(seed * 99991) * 10000;
   const f = x - Math.floor(x);
   return min + f * (max - min);
+}
+
+export const STICKER_DEFS: { kind: string; svg: { __html: string } }[] = [
+  { kind: "star", svg: { __html: '<svg width="26" height="26" viewBox="0 0 20 20"><path d="M10 0 L12 8 L20 10 L12 12 L10 20 L8 12 L0 10 L8 8 Z" fill="oklch(0.68 0.14 45)"/></svg>' } },
+  { kind: "flower", svg: { __html: '<svg width="26" height="26" viewBox="0 0 26 26"><path d="M13 2 C13 8 20 6 20 13 C20 20 13 18 13 24 C13 18 6 20 6 13 C6 6 13 8 13 2 Z" stroke="oklch(0.5 0.1 300)" stroke-width="1.6" fill="none"/></svg>' } },
+  { kind: "squiggle", svg: { __html: '<svg width="30" height="16" viewBox="0 0 30 16"><path d="M1 8 Q 8 0, 15 8 T 29 8" stroke="oklch(0.6 0.1 45)" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>' } },
+  { kind: "circle", svg: { __html: '<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="oklch(0.5 0.1 300)" stroke-width="1.8" fill="none" stroke-dasharray="2 4"/></svg>' } },
+];
+
+export const DAILY_TIP = {
+  text: "you've mentioned ice cream a few times lately —",
+  place: "maybe swing by Honeycone this week?",
+};
+
+export const JOURNAL_CANVAS_W = 282;
+export const JOURNAL_CANVAS_H = 460;
+export const JOURNAL_SLIVER_W = 40;
+
+const TITLE_STOPWORDS = new Set([
+  "the", "a", "an", "to", "of", "for", "and", "that", "it", "was", "is", "in", "again", "again,",
+]);
+
+export function generateTitle(text: string, seedOffset = 0) {
+  const words = text.replace(/[—–]/g, " ").split(/\s+/).filter(Boolean);
+  const meaningful = words.filter((w) => !TITLE_STOPWORDS.has(w.toLowerCase().replace(/[^a-z]/g, "")));
+  const pick = (meaningful.length >= 4 ? meaningful : words).slice(0, 4 + (seedOffset % 2));
+  let title = pick.join(" ").replace(/[,.:;—–]+$/, "");
+  if (!title) title = "untitled note";
+  return title.charAt(0).toUpperCase() + title.slice(1);
 }

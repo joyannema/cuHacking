@@ -1,21 +1,29 @@
 import PaperDecor from "../PaperDecor";
 import FolderCard from "../FolderCard";
+import NoteCard from "../NoteCard";
 import { PAPER_BG, PAPER_BG_SIZE } from "@/lib/data";
-import type { CategoryMeta } from "@/lib/types";
+import type { CategoryMeta, Note } from "@/lib/types";
 
 export default function CabinetScreen({
   categories,
+  noteResults,
   searchQuery,
   onSearchChange,
   onOpenCategory,
+  onOpenNote,
   onGoStream,
 }: {
   categories: CategoryMeta[];
+  noteResults: Note[];
   searchQuery: string;
   onSearchChange: (value: string) => void;
   onOpenCategory: (slug: string) => void;
+  onOpenNote: (id: number) => void;
   onGoStream: () => void;
 }) {
+  const q = searchQuery.trim();
+  const noResults = q.length > 0 && categories.length === 0 && noteResults.length === 0;
+
   return (
     <div
       style={{
@@ -101,7 +109,31 @@ export default function CabinetScreen({
             <FolderCard key={cat.slug} category={cat} mini={false} onClick={() => onOpenCategory(cat.slug)} />
           ))}
         </div>
-        {categories.length === 0 && (
+
+        {noteResults.length > 0 && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, margin: "20px 0 10px" }}>
+              <div style={{ flex: 1, height: 0, borderTop: "1.6px dashed oklch(0.68 0.02 60)" }} />
+              <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9.5, letterSpacing: "0.08em", color: "oklch(0.55 0.02 60)", textTransform: "uppercase" }}>
+                journal entries
+              </span>
+              <div style={{ flex: 1, height: 0, borderTop: "1.6px dashed oklch(0.68 0.02 60)" }} />
+            </div>
+            <div style={{ columnCount: 2, columnGap: 12 }}>
+              {noteResults.map((note) => (
+                <NoteCard key={note.id} note={note} onClick={() => onOpenNote(note.id)} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {noResults && (
+          <p style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: "oklch(0.55 0.02 60)", textAlign: "center", marginTop: 40 }}>
+            nothing found for that yet.
+          </p>
+        )}
+
+        {q.length === 0 && categories.length === 0 && (
           <p style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: "oklch(0.55 0.02 60)", textAlign: "center", marginTop: 40 }}>
             nothing filed under that yet.
           </p>
