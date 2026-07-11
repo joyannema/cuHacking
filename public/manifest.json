@@ -1,0 +1,12 @@
+{
+  "name": "Synapse",
+  "short_name": "Synapse",
+  "description": "The autonomous life logger that organizes your thoughts at the speed of speech.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EDE7DD",
+  "theme_color": "#EDE7DD",
+  "icons": [
+    { "src": "/icon", "sizes": "512x512", "type": "image/png" }
+  ]
+}
