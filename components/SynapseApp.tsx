@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { CATEGORY_LABELS, SEED_NOTES, TRANSCRIPT_SAMPLE, generateTitle, seededRand } from "@/lib/data";
+import { CATEGORY_LABELS, SEED_NOTES, generateTitle, seededRand } from "@/lib/data";
 import type { CategoryMeta, CategorySlug, JournalElement, JournalPage, Note, Profile, Screen } from "@/lib/types";
 import SigninScreen, { type AuthUser } from "./screens/SigninScreen";
 import StreamScreen from "./screens/StreamScreen";
@@ -41,6 +41,7 @@ export default function SynapseApp() {
   const [notes, setNotes] = useState<Note[]>(SEED_NOTES);
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [classifiedNote, setClassifiedNote] = useState<any>(null);
   const [attachedPhoto, setAttachedPhoto] = useState(false);
   const [voiceAppendMode, setVoiceAppendMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,6 +66,8 @@ export default function SynapseApp() {
 
   const typeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const journalDragRef = useRef<JournalDragSession | null>(null);
   const trayDragRef = useRef<TrayDragSession | null>(null);
@@ -248,22 +251,54 @@ export default function SynapseApp() {
     setVoiceAppendMode(false);
   };
 
-  const toggleRecording = () => {
+  const toggleRecording = async () => {
     if (isRecording) {
-      if (typeTimer.current) clearInterval(typeTimer.current);
+      mediaRecorderRef.current?.stop();
       setIsRecording(false);
       return;
     }
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+
+    audioChunksRef.current = [];
+
+    recorder.ondataavailable = (event) => {
+      audioChunksRef.current.push(event.data);
+    };
+
+    recorder.onstop = async () => {
+      try {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.webm");
+        formData.append("existingCategories", JSON.stringify(Array.from(new Set(notes.map((n) => n.category)))));
+
+        const response = await fetch("/api/classify", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+        console.log("Frontend received:", data);
+
+        if (!response.ok) {
+          throw new Error(data.error || "Classification failed");
+        }
+
+        setTranscript(data.details ?? data.transcript ?? "");
+        setClassifiedNote(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+
+    mediaRecorderRef.current = recorder;
+    recorder.start();
     setIsRecording(true);
-    setTranscript("");
-    const words = TRANSCRIPT_SAMPLE.split(" ");
-    let i = 0;
-    if (typeTimer.current) clearInterval(typeTimer.current);
-    typeTimer.current = setInterval(() => {
-      i++;
-      setTranscript(words.slice(0, i).join(" "));
-      if (i >= words.length && typeTimer.current) clearInterval(typeTimer.current);
-    }, 180);
   };
 
   const toggleAttachPhoto = () => setAttachedPhoto((v) => !v);
@@ -286,18 +321,19 @@ export default function SynapseApp() {
     const id = Date.now();
     const newNote: Note = {
       id,
-      category: "work_expenses",
-      text: transcript,
-      tags: attachedPhoto ? ["team lunch", "$45.50", "sansotei"] : ["team lunch"],
+      category: classifiedNote?.category ?? "uncategorized",
+      title: classifiedNote?.title ?? generateTitle(transcript),
+      text: classifiedNote?.details ?? transcript,
+      tags: classifiedNote?.tags ?? [],
       time: "now",
       colorIdx: 0,
       organizing: true,
-      title: generateTitle(transcript),
     };
     setOverlayOpen(false);
     setIsRecording(false);
     setTranscript("");
     setAttachedPhoto(false);
+    console.log("Saving note with category:", newNote.category);
     setNotes((prev) => [newNote, ...prev]);
     setTimeout(() => {
       setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, organizing: false } : n)));
@@ -441,9 +477,11 @@ export default function SynapseApp() {
   notes.forEach((n) => {
     counts[n.category] = (counts[n.category] || 0) + 1;
   });
-  const allCategories: CategoryMeta[] = CATEGORY_SLUGS.map((slug, i) => ({
+  const noteCategorySlugs = Array.from(new Set(notes.map((n) => n.category)));
+  const combinedSlugs = Array.from(new Set([...CATEGORY_SLUGS, ...noteCategorySlugs]));
+  const allCategories: CategoryMeta[] = combinedSlugs.map((slug, i) => ({
     slug,
-    label: CATEGORY_LABELS[slug],
+    label: CATEGORY_LABELS[slug] || slug.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
     count: counts[slug] || 0,
     colorIdx: i,
   }));
@@ -464,6 +502,7 @@ export default function SynapseApp() {
     : [];
 
   const activeCatMeta = allCategories.find((c) => c.slug === activeCategory) || allCategories[0];
+  console.log("allCategories:", allCategories.map(c => c.slug));
   const categoryNotes = notes.filter((n) => n.category === activeCategory);
 
   const rawActiveNote = notes.find((n) => n.id === activeNoteId) || notes[0];
