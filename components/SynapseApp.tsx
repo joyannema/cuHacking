@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { CATEGORY_LABELS, SEED_NOTES, TRANSCRIPT_SAMPLE, generateTitle, seededRand } from "@/lib/data";
 import type { CategoryMeta, CategorySlug, JournalElement, JournalPage, Note, Profile, Screen } from "@/lib/types";
-import SigninScreen from "./screens/SigninScreen";
+import SigninScreen, { type AuthUser } from "./screens/SigninScreen";
 import StreamScreen from "./screens/StreamScreen";
 import CabinetScreen from "./screens/CabinetScreen";
 import CategoryScreen from "./screens/CategoryScreen";
@@ -174,7 +174,10 @@ export default function SynapseApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const signIn = () => setScreen("stream");
+  const signIn = (user: AuthUser) => {
+    setProfile((prev) => ({ ...prev, username: user.username, name: user.username }));
+    setScreen("stream");
+  };
   const signOut = () => setScreen("signin");
   const goStream = () => setScreen("stream");
   const goCabinet = () => setScreen("cabinet");

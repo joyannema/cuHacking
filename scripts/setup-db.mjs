@@ -1,6 +1,9 @@
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { MongoClient } from "mongodb";
+import bcrypt from "bcryptjs";
+
+const TEST_USER = { username: "person", password: "hello" };
 
 function loadEnv() {
   const envPath = resolve(process.cwd(), ".env.local");
@@ -39,6 +42,16 @@ async function main() {
     await notes.createIndex({ categoryId: 1 });
     await categories.createIndex({ userId: 1, label: 1 }, { unique: true });
     await categories.createIndex({ userId: 1, createdAt: -1 });
+
+    const existingUser = await users.findOne({ username: TEST_USER.username });
+    if (!existingUser) {
+      await users.insertOne({
+        username: TEST_USER.username,
+        passwordHash: await bcrypt.hash(TEST_USER.password, 10),
+        createdAt: new Date(),
+      });
+      console.log(`  seeded test user "${TEST_USER.username}"`);
+    }
 
     const counts = await Promise.all([
       users.countDocuments(),
