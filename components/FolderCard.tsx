@@ -1,3 +1,4 @@
+// import type { CSSProperties } from "react"; — only needed by the disabled hover-lift styling
 import { CLIP_PRESETS, seededRand } from "@/lib/data";
 import type { CategoryMeta } from "@/lib/types";
 
@@ -21,6 +22,7 @@ export default function FolderCard({
   return (
     <button
       onClick={onClick}
+      // className="hover-lift" — disabled for now, was causing lag
       style={{
         position: "relative",
         width: mini ? "calc(50% - 6px)" : "calc(50% - 8px)",
