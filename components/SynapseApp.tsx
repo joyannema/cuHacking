@@ -17,6 +17,22 @@ import CaptureOverlay from "./CaptureOverlay";
 
 const CATEGORY_SLUGS = Object.keys(CATEGORY_LABELS) as CategorySlug[];
 const TAB_SCREENS = new Set<Screen>(["stream", "todos", "journal", "settings"]);
+const MOOD_FADE_IN_MS = 2000;
+
+function fadeAudioVolume(audio: HTMLAudioElement, to: number, durationMs: number, onDone?: () => void) {
+  const from = audio.volume;
+  const start = performance.now();
+  const step = (now: number) => {
+    const t = Math.min(1, Math.max(0, (now - start) / durationMs));
+    audio.volume = from + (to - from) * t;
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      onDone?.();
+    }
+  };
+  requestAnimationFrame(step);
+}
 
 interface JournalDragSession {
   pageIdx: number;
@@ -49,6 +65,7 @@ export default function SynapseApp() {
   const [activeCategory, setActiveCategory] = useState<CategorySlug | null>(null);
   const [activeNoteId, setActiveNoteId] = useState<number | null>(null);
   const [noteOrigin, setNoteOrigin] = useState<Screen | null>(null);
+  const [muted, setMuted] = useState(() => typeof window !== "undefined" && window.localStorage.getItem("synapse:muted") === "1");
 
   const [profile, setProfile] = useState<Profile>({ name: "alex rivera", username: "alexrivera", email: "alex@synapse.app", bio: "" });
   const [draftProfile, setDraftProfile] = useState<Profile | null>(null);
@@ -69,6 +86,9 @@ export default function SynapseApp() {
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const moodAudioRef = useRef<HTMLAudioElement | null>(null);
+  const sharedTuneUrlRef = useRef<string | null>(null);
+  const sharedTunePromiseRef = useRef<Promise<string | null> | null>(null);
 
   const journalDragRef = useRef<JournalDragSession | null>(null);
   const trayDragRef = useRef<TrayDragSession | null>(null);
@@ -178,11 +198,43 @@ export default function SynapseApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const ensureSharedTune = () => {
+    if (sharedTuneUrlRef.current) return Promise.resolve(sharedTuneUrlRef.current);
+    if (sharedTunePromiseRef.current) return sharedTunePromiseRef.current;
+    const promise = fetch("/api/music", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mood: "neutral" }),
+    })
+      .then((res) => (res.ok ? res.blob() : null))
+      .then((blob) => {
+        if (!blob) return null;
+        const url = URL.createObjectURL(blob);
+        sharedTuneUrlRef.current = url;
+        return url;
+      })
+      .catch((err) => {
+        console.error("ensureSharedTune failed:", err);
+        return null;
+      });
+    sharedTunePromiseRef.current = promise;
+    return promise;
+  };
+
   const signIn = (user: AuthUser) => {
     setProfile((prev) => ({ ...prev, username: user.username, name: user.username }));
     setScreen("stream");
+    ensureSharedTune();
   };
   const signOut = () => setScreen("signin");
+  const toggleMute = () => {
+    setMuted((prev) => {
+      const next = !prev;
+      if (next) moodAudioRef.current?.pause();
+      window.localStorage.setItem("synapse:muted", next ? "1" : "0");
+      return next;
+    });
+  };
   const goStream = () => setScreen("stream");
   const goCabinet = () => setScreen("cabinet");
   const goSettings = () => setScreen("settings");
@@ -202,9 +254,14 @@ export default function SynapseApp() {
     setNoteOrigin(screen);
     setActiveNoteId(id);
     setScreen("note");
+    playMoodTune();
   };
-  const closeNote = () => setScreen(noteOrigin || "stream");
+  const closeNote = () => {
+    stopMoodTune();
+    setScreen(noteOrigin || "stream");
+  };
   const deleteNote = () => {
+    stopMoodTune();
     setNotes((prev) => prev.filter((n) => n.id !== activeNoteId));
     setScreen(noteOrigin || "stream");
   };
@@ -233,6 +290,7 @@ export default function SynapseApp() {
     setOverlayOpen(true);
     setIsRecording(false);
     setTranscript("");
+    setClassifiedNote(null);
     setAttachedPhoto(false);
     setVoiceAppendMode(false);
   };
@@ -240,6 +298,7 @@ export default function SynapseApp() {
     setOverlayOpen(true);
     setIsRecording(false);
     setTranscript("");
+    setClassifiedNote(null);
     setAttachedPhoto(false);
     setVoiceAppendMode(true);
   };
@@ -249,6 +308,7 @@ export default function SynapseApp() {
     setOverlayOpen(false);
     setIsRecording(false);
     setTranscript("");
+    setClassifiedNote(null);
     setVoiceAppendMode(false);
   };
 
@@ -294,8 +354,17 @@ export default function SynapseApp() {
           throw new Error(data.error || "Classification failed");
         }
 
-        setTranscript(data.details ?? data.transcript ?? "");
-        setClassifiedNote(data);
+        const newBit = data.details ?? data.transcript ?? "";
+        setTranscript((prev) => (prev ? [prev, newBit].filter(Boolean).join(" ") : newBit));
+        setClassifiedNote((prev: any) =>
+          prev
+            ? {
+                ...data,
+                details: [prev.details, data.details].filter(Boolean).join(" "),
+                tags: Array.from(new Set([...(prev.tags ?? []), ...(data.tags ?? [])])),
+              }
+            : data
+        );
       } catch (err) {
         console.error(err);
       } finally {
@@ -313,6 +382,31 @@ export default function SynapseApp() {
 
   const toggleAttachPhoto = () => setAttachedPhoto((v) => !v);
 
+  const playMoodTune = async () => {
+    if (muted) return;
+    try {
+      const url = await ensureSharedTune();
+      if (!url) return;
+      moodAudioRef.current?.pause();
+      const audio = new Audio(url);
+      audio.volume = 0;
+      moodAudioRef.current = audio;
+      audio
+        .play()
+        .then(() => fadeAudioVolume(audio, 1, MOOD_FADE_IN_MS))
+        .catch(() => {});
+    } catch (err) {
+      console.error("playMoodTune failed:", err);
+    }
+  };
+
+  const stopMoodTune = () => {
+    const audio = moodAudioRef.current;
+    if (!audio) return;
+    moodAudioRef.current = null;
+    audio.pause();
+  };
+
   const saveNote = () => {
     if (!transcript.trim()) return;
     if (typeTimer.current) clearInterval(typeTimer.current);
@@ -323,6 +417,7 @@ export default function SynapseApp() {
       setOverlayOpen(false);
       setIsRecording(false);
       setTranscript("");
+      setClassifiedNote(null);
       setAttachedPhoto(false);
       setVoiceAppendMode(false);
       return;
@@ -335,6 +430,7 @@ export default function SynapseApp() {
       title: classifiedNote?.title ?? generateTitle(transcript),
       text: classifiedNote?.details ?? transcript,
       tags: classifiedNote?.tags ?? [],
+      mood: classifiedNote?.mood,
       time: "now",
       colorIdx: 0,
       organizing: true,
@@ -344,6 +440,7 @@ export default function SynapseApp() {
     setOverlayOpen(false);
     setIsRecording(false);
     setTranscript("");
+    setClassifiedNote(null);
     setAttachedPhoto(false);
     console.log("Saving note with category:", newNote.category);
     setNotes((prev) => [newNote, ...prev]);
@@ -466,6 +563,7 @@ export default function SynapseApp() {
     setScreen("note");
     setActiveNoteId(entryId);
     setNoteOrigin("journal");
+    playMoodTune();
   };
   const journalPickEntry = (note: Note) => {
     const pos = journalPendingPos;
@@ -576,7 +674,9 @@ export default function SynapseApp() {
         />
       )}
 
-      {screen === "settings" && <SettingsScreen profile={profile} onSignOut={signOut} onGoAccount={goAccount} />}
+      {screen === "settings" && (
+        <SettingsScreen profile={profile} muted={muted} onSignOut={signOut} onGoAccount={goAccount} onToggleMute={toggleMute} />
+      )}
 
       {screen === "account" && draftProfile && (
         <AccountScreen

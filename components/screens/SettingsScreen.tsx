@@ -4,12 +4,16 @@ import type { Profile } from "@/lib/types";
 
 export default function SettingsScreen({
   profile,
+  muted,
   onSignOut,
   onGoAccount,
+  onToggleMute,
 }: {
   profile: Profile;
+  muted: boolean;
   onSignOut: () => void;
   onGoAccount: () => void;
+  onToggleMute: () => void;
 }) {
   const settingsRows = [
     { icon: "👤", label: "account", onClick: onGoAccount },
@@ -109,6 +113,50 @@ export default function SettingsScreen({
               </svg>
             </div>
           ))}
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "15px 2px",
+              borderTop: "1.4px dashed oklch(0.85 0.015 70)",
+            }}
+          >
+            <span style={{ fontSize: 16 }}>{muted ? "🔇" : "🔊"}</span>
+            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "oklch(0.28 0.02 55)", flex: 1 }}>
+              mood tune sound
+            </span>
+            <button
+              onClick={onToggleMute}
+              aria-pressed={!muted}
+              aria-label={muted ? "unmute mood tune" : "mute mood tune"}
+              style={{
+                width: 44,
+                height: 26,
+                borderRadius: 20,
+                border: "none",
+                padding: 3,
+                cursor: "pointer",
+                background: muted ? "oklch(0.85 0.015 70)" : "oklch(0.66 0.16 30)",
+                display: "flex",
+                justifyContent: muted ? "flex-start" : "flex-end",
+                transition: "background 0.2s ease",
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  background: "oklch(0.99 0.005 80)",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                  transition: "transform 0.2s ease",
+                }}
+              />
+            </button>
+          </div>
         </div>
 
         <button
