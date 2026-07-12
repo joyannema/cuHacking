@@ -110,7 +110,7 @@ export default function SigninScreen({ onSignIn }: { onSignIn: (user: AuthUser) 
         sign in to start filing your thoughts.
       </p>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 320 }}>
         <input
           type="text"
           placeholder="username"
