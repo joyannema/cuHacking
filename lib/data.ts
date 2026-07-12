@@ -20,6 +20,21 @@ export const PAPER_BG =
   "radial-gradient(rgba(90,70,50,0.16) 1px, transparent 1.4px)";
 export const PAPER_BG_SIZE = "15px 15px";
 
+export function formatRelativeTime(date: Date | string) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (sec < 60) return "now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day === 1) return "yesterday";
+  if (day < 7) return `${day}d ago`;
+  const week = Math.floor(day / 7);
+  return `${week}w ago`;
+}
+
 export const SEED_NOTES: Note[] = [
   { id: 1, category: "travel_prep", text: "Need to renew my passport before the trip to Japan in October.", tags: ["passport", "Japan"], time: "2m ago", colorIdx: 3, isTodo: true, todoText: "renew passport" },
   { id: 2, category: "work_expenses", text: "Team lunch at Sansotei — grab the receipt for reimbursement.", tags: ["team lunch", "$45.50"], time: "41m ago", colorIdx: 0, isTodo: true, todoText: "submit sansotei receipt" },

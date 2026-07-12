@@ -17,8 +17,15 @@ export interface CategoryDoc {
 export interface NoteDoc {
   _id?: ObjectId;
   userId: ObjectId;
-  categoryId: ObjectId | null;
+  category: string;
+  title: string;
   text: string;
   tags: string[];
+  mood: string | null;
+  isTodo: boolean;
+  todoText: string | null;
+  todoDone: boolean;
+  photo: boolean;
+  colorIdx: number;
   createdAt: Date;
 }

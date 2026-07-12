@@ -12,7 +12,7 @@ export async function ensureIndexes() {
   await users.createIndex({ username: 1 }, { unique: true });
 
   await notes.createIndex({ userId: 1, createdAt: -1 });
-  await notes.createIndex({ categoryId: 1 });
+  await notes.createIndex({ userId: 1, category: 1 });
 
   await categories.createIndex({ userId: 1, label: 1 }, { unique: true });
   await categories.createIndex({ userId: 1, createdAt: -1 });

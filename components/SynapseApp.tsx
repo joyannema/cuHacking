@@ -55,6 +55,7 @@ export default function SynapseApp() {
   const [screen, setScreen] = useState<Screen>("signin");
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [notes, setNotes] = useState<Note[]>(SEED_NOTES);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -223,8 +224,17 @@ export default function SynapseApp() {
 
   const signIn = (user: AuthUser) => {
     setProfile((prev) => ({ ...prev, username: user.username, name: user.username }));
+    setUserId(user.userId);
+    setNotes(SEED_NOTES);
     setScreen("stream");
     ensureSharedTune();
+
+    // Mock notes stay client-side only (not written to the db) — real saved
+    // notes load in and sit alongside them, newest first.
+    fetch(`/api/notes?userId=${encodeURIComponent(user.userId)}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed to load notes"))))
+      .then((data) => setNotes([...(data.notes ?? []), ...SEED_NOTES]))
+      .catch((err) => console.error("Failed to load notes:", err));
   };
   const signOut = () => setScreen("signin");
   const toggleMute = () => {
@@ -411,10 +421,10 @@ export default function SynapseApp() {
     if (!transcript.trim() || isProcessing) return;
 
     if (typeTimer.current) clearInterval(typeTimer.current);
-    const id = Date.now();
+    const tempId = Date.now();
 
     const newNote: Note = {
-      id,
+      id: tempId,
       category: classifiedNote?.category ?? "uncategorized",
       title: classifiedNote?.title ?? generateTitle(transcript),
       text: classifiedNote?.details ?? transcript,
@@ -423,40 +433,12 @@ export default function SynapseApp() {
       time: "now",
       colorIdx: 0,
       organizing: true,
+      isTodo: classifiedNote?.is_todo === true,
+      todoText: classifiedNote?.title ?? transcript,
     };
-
 
     // Update UI immediately
     setNotes((prev) => [newNote, ...prev]);
-
-
-    // Save to MongoDB
-    try {
-      const response = await fetch("/api/notes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: profile.username,
-          category: newNote.category,
-          title: newNote.title,
-          text: newNote.text,
-          tags: newNote.tags,
-        }),
-      });
-
-
-      if (!response.ok) {
-        throw new Error("Failed to save note");
-      }
-
-      console.log("Saved note to DB");
-
-    } catch (err) {
-      console.error("Database save failed:", err);
-    }
-
 
     setOverlayOpen(false);
     setIsRecording(false);
@@ -464,16 +446,42 @@ export default function SynapseApp() {
     setClassifiedNote(null);
     setAttachedPhoto(false);
 
-
+    // Clear the "organizing" shimmer on a fixed timer — this is a UI
+    // animation, so it must not depend on the DB save (which could be slow
+    // or hang) ever resolving.
     setTimeout(() => {
-      setNotes((prev) =>
-        prev.map((n) =>
-          n.id === id
-            ? { ...n, organizing: false }
-            : n
-        )
-      );
+      setNotes((prev) => prev.map((n) => (n.id === tempId ? { ...n, organizing: false } : n)));
     }, 1400);
+
+    // Persist to MongoDB in the background, then swap the optimistic note
+    // for the saved one (its id is derived from the note's real ObjectId).
+    // If this fails, the optimistic note just stays as-is locally.
+    if (userId) {
+      try {
+        const response = await fetch("/api/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            category: newNote.category,
+            title: newNote.title,
+            text: newNote.text,
+            tags: newNote.tags,
+            mood: newNote.mood,
+            isTodo: newNote.isTodo,
+            todoText: newNote.todoText,
+            colorIdx: newNote.colorIdx,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to save note");
+
+        const data = await response.json();
+        setNotes((prev) => prev.map((n) => (n.id === tempId ? { ...data.note, organizing: false } : n)));
+      } catch (err) {
+        console.error("Database save failed:", err);
+      }
+    }
   };
 
   // Account
