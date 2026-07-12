@@ -75,7 +75,7 @@ export default function CaptureOverlay({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "max(24px, env(safe-area-inset-top)) 20px 0",
+          padding: "max(24px, env(safe-area-inset-top)) 40px 0",
         }}
       >
         <button
@@ -110,7 +110,7 @@ export default function CaptureOverlay({
         <path d="M1 7 Q 7 0, 14 7 T 27 7" stroke="oklch(0.6 0.1 45)" strokeWidth="2" fill="none" strokeLinecap="round" strokeDasharray="1 4.5" />
       </svg>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 26, padding: "0 30px" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 26, padding: "0 60px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, height: 36 }}>
           {WAVE_BASE.map((base, i) => (
             <div
@@ -283,7 +283,7 @@ export default function CaptureOverlay({
         </div>
       </div>
 
-      <div style={{ padding: "8px 26px max(30px, env(safe-area-inset-bottom))", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ padding: "8px 52px max(30px, env(safe-area-inset-bottom))", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button
           onClick={onToggleAttachPhoto}
           style={{

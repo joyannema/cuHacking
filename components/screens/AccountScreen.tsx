@@ -51,7 +51,7 @@ export default function AccountScreen({
     >
       <PaperDecor />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "max(28px, env(safe-area-inset-top)) 20px 10px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "max(28px, env(safe-area-inset-top)) 40px 10px" }}>
         <button
           onClick={onGoSettings}
           style={{
@@ -76,7 +76,7 @@ export default function AccountScreen({
         </span>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 20px 40px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 40px 40px" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 22 }}>
           <div
             style={{

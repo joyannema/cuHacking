@@ -888,6 +888,9 @@ export default function SynapseApp() {
           onCapture={openCapture}
           onJournal={goJournal}
           onSettings={goSettings}
+          muted={muted}
+          onToggleMute={toggleMute}
+          moodLabel={averageMoodOfRecentNotes(notes)}
         />
       )}
 

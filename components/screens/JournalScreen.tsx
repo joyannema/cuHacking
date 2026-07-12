@@ -252,7 +252,7 @@ export default function JournalScreen({
       }}
     >
       {atCover ? (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 40px" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 80px" }}>
           <div
             style={{
               position: "relative",
@@ -308,7 +308,7 @@ export default function JournalScreen({
         </div>
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "66px 20px 8px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "66px 40px 8px" }}>
             <button
               onClick={onGoCover}
               style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "oklch(0.9 0.015 70)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
@@ -393,7 +393,7 @@ export default function JournalScreen({
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, padding: "8px 20px 6px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, padding: "8px 40px 6px" }}>
             <button onClick={onPrevPage} style={navBtnStyle}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                 <path d="M15 4L7 12L15 20" stroke="oklch(0.35 0.02 55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -409,7 +409,7 @@ export default function JournalScreen({
             </button>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "2px 16px 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "2px 32px 12px" }}>
             {STICKER_DEFS.map((sd) => (
               <div key={sd.kind} style={toolBtnStyle} onPointerDown={(e) => onTrayStickerDown(sd.kind, e)} dangerouslySetInnerHTML={sd.svg} />
             ))}

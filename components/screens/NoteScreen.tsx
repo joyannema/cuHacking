@@ -42,7 +42,7 @@ export default function NoteScreen({
     >
       <PaperDecor />
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(28px, env(safe-area-inset-top)) 20px 10px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(28px, env(safe-area-inset-top)) 40px 10px" }}>
         <button
           onClick={onClose}
           style={{
@@ -66,7 +66,7 @@ export default function NoteScreen({
         <div style={{ width: 36 }} />
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "6px 22px 40px", WebkitOverflowScrolling: "touch" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "6px 44px 40px", WebkitOverflowScrolling: "touch" }}>
         <div
           style={{
             position: "relative",

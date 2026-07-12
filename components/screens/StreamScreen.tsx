@@ -64,7 +64,7 @@ export default function StreamScreen({
           paddingBottom: 130,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(28px, env(safe-area-inset-top)) 20px 12px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(28px, env(safe-area-inset-top)) 40px 12px" }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <Image
               src="/logo_noslogan.png"
@@ -115,7 +115,7 @@ export default function StreamScreen({
           <circle cx="8" cy="8" r="6.5" stroke="oklch(0.5 0.1 300)" strokeWidth="1.6" fill="none" strokeDasharray="2 3.4" />
         </svg>
 
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "10px 20px 6px" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "10px 40px 6px" }}>
           <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 13.5, color: "oklch(0.35 0.02 55)", textTransform: "lowercase" }}>
             folders
           </span>
@@ -138,7 +138,7 @@ export default function StreamScreen({
           )}
         </div>
 
-        <div style={{ padding: "2px 16px 4px", display: "flex", flexWrap: "wrap", gap: 11 }}>
+        <div style={{ padding: "2px 32px 4px", display: "flex", flexWrap: "wrap", gap: 11 }}>
           {topFolders.map((cat) => (
             <FolderCard key={cat.slug} category={cat} mini onClick={() => onOpenCategory(cat.slug)} />
           ))}

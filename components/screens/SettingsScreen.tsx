@@ -37,7 +37,7 @@ export default function SettingsScreen({
     >
       <PaperDecor />
 
-      <div style={{ padding: "max(28px, env(safe-area-inset-top)) 20px 16px" }}>
+      <div style={{ padding: "max(28px, env(safe-area-inset-top)) 40px 16px" }}>
         <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 22, color: "oklch(0.24 0.02 55)", letterSpacing: "-0.02em" }}>
           settings
         </span>
@@ -47,7 +47,7 @@ export default function SettingsScreen({
         <path d="M1 7 Q 8 0, 15 7 T 29 7" stroke="oklch(0.55 0.08 45)" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeDasharray="1 4.5" />
       </svg>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 150px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 40px 150px" }}>
         <button
           onClick={onGoAccount}
           style={{

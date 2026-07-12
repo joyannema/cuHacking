@@ -30,7 +30,7 @@ export default function CategoryScreen({
     >
       <PaperDecor />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "max(28px, env(safe-area-inset-top)) 20px 10px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "max(28px, env(safe-area-inset-top)) 40px 10px" }}>
         <button
           onClick={onGoStream}
           style={{
@@ -72,7 +72,7 @@ export default function CategoryScreen({
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 14px 40px", WebkitOverflowScrolling: "touch" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 28px 40px", WebkitOverflowScrolling: "touch" }}>
         <div style={{ columnCount: 2, columnGap: 12 }}>
           {notes.map((note) => (
             <NoteCard key={note.id} note={note} onClick={() => onOpenNote(note.id)} />

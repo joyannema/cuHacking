@@ -7,6 +7,9 @@ export default function TabBar({
   onCapture,
   onJournal,
   onSettings,
+  muted,
+  onToggleMute,
+  moodLabel,
 }: {
   active: "stream" | "todos" | "journal" | "settings";
   onHome: () => void;
@@ -14,6 +17,9 @@ export default function TabBar({
   onCapture: () => void;
   onJournal: () => void;
   onSettings: () => void;
+  muted: boolean;
+  onToggleMute: () => void;
+  moodLabel: string;
 }) {
   const navIcon = (
     isActive: boolean,
@@ -129,6 +135,81 @@ export default function TabBar({
             <path d="M4.5 19.5c1.4-3.8 4.3-5.7 7.5-5.7s6.1 1.9 7.5 5.7" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" />
           </svg>
         ))}
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          right: 40,
+          top: 0,
+          bottom: 0,
+          display: "flex",
+          alignItems: "center",
+          pointerEvents: "auto",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            transform: "rotate(-2.5deg)",
+            background: "repeating-linear-gradient(45deg, oklch(0.88 0.05 210 / 0.85) 0 4px, oklch(0.94 0.03 210 / 0.7) 4px 8px)",
+            borderRadius: 3,
+            padding: "10px 16px 9px",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+          }}
+        >
+          <button
+            onClick={onToggleMute}
+            aria-label={muted ? "Unmute" : "Mute"}
+            style={{
+              width: 32,
+              height: 32,
+              flexShrink: 0,
+              borderRadius: "50%",
+              border: "1.5px solid oklch(0.98 0.01 80 / 0.7)",
+              background: "oklch(0.98 0.01 80 / 0.55)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M4 10v4h4l5 5V5L8 10H4z" fill="oklch(0.35 0.03 60)" />
+              {muted ? (
+                <path d="M16 9l5 5M21 9l-5 5" stroke="oklch(0.35 0.03 60)" strokeWidth="1.8" strokeLinecap="round" />
+              ) : (
+                <path d="M16.5 8.5a5 5 0 0 1 0 7" stroke="oklch(0.35 0.03 60)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+              )}
+            </svg>
+          </button>
+
+          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
+            <span
+              style={{
+                fontFamily: "'IBM Plex Mono',monospace",
+                fontSize: 8.5,
+                color: "oklch(0.32 0.03 60)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              now playing your recent mood
+            </span>
+            <span
+              style={{
+                fontFamily: "'Space Grotesk',sans-serif",
+                fontWeight: 700,
+                fontSize: 16,
+                color: "oklch(0.24 0.03 55)",
+                textTransform: "capitalize",
+              }}
+            >
+              {moodLabel}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -38,7 +38,7 @@ export default function CabinetScreen({
     >
       <PaperDecor />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "max(28px, env(safe-area-inset-top)) 20px 10px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "max(28px, env(safe-area-inset-top)) 40px 10px" }}>
         <button
           onClick={onGoStream}
           style={{
@@ -70,7 +70,7 @@ export default function CabinetScreen({
         <path d="M9 0 L11 7 L18 9 L11 11 L9 18 L7 11 L0 9 L7 7 Z" fill="oklch(0.6 0.1 250)" />
       </svg>
 
-      <div style={{ padding: "8px 20px 14px" }}>
+      <div style={{ padding: "8px 40px 14px" }}>
         <div
           style={{
             display: "flex",
@@ -103,7 +103,7 @@ export default function CabinetScreen({
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "10px 18px 50px", WebkitOverflowScrolling: "touch" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px 36px 50px", WebkitOverflowScrolling: "touch" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
           {categories.map((cat) => (
             <FolderCard key={cat.slug} category={cat} mini={false} onClick={() => onOpenCategory(cat.slug)} />

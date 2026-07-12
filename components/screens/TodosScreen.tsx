@@ -46,7 +46,7 @@ export default function TodosScreen({
     >
       <PaperDecor />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "max(28px, env(safe-area-inset-top)) 20px 10px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "max(28px, env(safe-area-inset-top)) 40px 10px" }}>
         <button
           onClick={onGoStream}
           style={{
@@ -89,7 +89,7 @@ export default function TodosScreen({
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 18px 130px", display: "flex", flexDirection: "column", gap: 14, WebkitOverflowScrolling: "touch" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 36px 130px", display: "flex", flexDirection: "column", gap: 14, WebkitOverflowScrolling: "touch" }}>
         <div
           style={{
             position: "relative",

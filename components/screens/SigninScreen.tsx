@@ -64,7 +64,7 @@ export default function SigninScreen({ onSignIn }: { onSignIn: (user: AuthUser) 
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "0 34px",
+        padding: "0 68px",
         boxSizing: "border-box",
         backgroundColor: "oklch(0.93 0.015 75)",
         backgroundImage: PAPER_BG,
