@@ -40,6 +40,7 @@ export default function SynapseApp() {
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [notes, setNotes] = useState<Note[]>(SEED_NOTES);
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [classifiedNote, setClassifiedNote] = useState<any>(null);
   const [attachedPhoto, setAttachedPhoto] = useState(false);
@@ -269,11 +270,17 @@ export default function SynapseApp() {
 
     recorder.onstop = async () => {
       try {
+        // Show processing state while ElevenLabs/API works
+        setIsProcessing(true);
+
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
 
         const formData = new FormData();
         formData.append("audio", audioBlob, "recording.webm");
-        formData.append("existingCategories", JSON.stringify(Array.from(new Set(notes.map((n) => n.category)))));
+        formData.append(
+          "existingCategories",
+          JSON.stringify(Array.from(new Set(notes.map((n) => n.category))))
+        );
 
         const response = await fetch("/api/classify", {
           method: "POST",
@@ -292,6 +299,9 @@ export default function SynapseApp() {
       } catch (err) {
         console.error(err);
       } finally {
+        // Hide processing state
+        setIsProcessing(false);
+
         stream.getTracks().forEach((track) => track.stop());
       }
     };
@@ -638,6 +648,7 @@ export default function SynapseApp() {
       {overlayOpen && (
         <CaptureOverlay
           isRecording={isRecording}
+          isProcessing={isProcessing}
           transcript={transcript}
           attachedPhoto={attachedPhoto}
           onClose={closeCapture}

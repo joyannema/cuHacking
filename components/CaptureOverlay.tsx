@@ -5,6 +5,7 @@ const WAVE_BASE = [10, 18, 28, 20, 34, 22, 16, 26, 12];
 
 export default function CaptureOverlay({
   isRecording,
+  isProcessing,
   transcript,
   attachedPhoto,
   onClose,
@@ -14,6 +15,7 @@ export default function CaptureOverlay({
   onSave,
 }: {
   isRecording: boolean;
+  isProcessing: boolean;
   transcript: string;
   attachedPhoto: boolean;
   onClose: () => void;
@@ -22,8 +24,16 @@ export default function CaptureOverlay({
   onToggleAttachPhoto: () => void;
   onSave: () => void;
 }) {
-  const statusLabel = isRecording ? "listening…" : transcript ? "paused" : "tap to speak";
-  const hintLine = isRecording
+  const statusLabel = isProcessing
+    ? "organizing your thoughts…"
+    : isRecording
+    ? "listening…"
+    : transcript
+    ? "paused"
+    : "tap to speak";
+  const hintLine = isProcessing
+    ? "turning your thoughts into notes ✦"
+    : isRecording
     ? '"...go on, i\'m listening"'
     : transcript
     ? "tap save when you're ready"
@@ -106,6 +116,7 @@ export default function CaptureOverlay({
 
         <button
           onClick={onToggleRecording}
+          disabled={isProcessing}
           style={{
             width: 132,
             height: 132,
@@ -125,15 +136,56 @@ export default function CaptureOverlay({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "linear-gradient(155deg, oklch(0.74 0.15 45), oklch(0.63 0.17 28))",
-              boxShadow: "0 14px 34px oklch(0.6 0.16 35 / 0.5), 0 3px 10px rgba(0,0,0,0.15)",
-              animation: `blobMorph ${isRecording ? "2.4s" : "7s"} ease-in-out infinite, blobPulse ${
-                isRecording ? "1s" : "3.6s"
-              } ease-in-out infinite`,
+              background: isProcessing
+                ? "oklch(0.78 0.015 70)"
+                : "linear-gradient(155deg, oklch(0.74 0.15 45), oklch(0.63 0.17 28))",
+
+              boxShadow: isProcessing
+                ? "0 8px 20px rgba(0,0,0,0.08)"
+                : "0 14px 34px oklch(0.6 0.16 35 / 0.5), 0 3px 10px rgba(0,0,0,0.15)",
+
+              animation: isProcessing
+                ? "none"
+                : `blobMorph ${isRecording ? "2.4s" : "7s"} ease-in-out infinite, blobPulse ${
+                    isRecording ? "1s" : "3.6s"
+                  } ease-in-out infinite`,
             }}
           >
-            {isRecording ? (
-              <div style={{ width: 22, height: 22, borderRadius: 5, background: "oklch(0.99 0.005 80)" }} />
+            {isProcessing ? (
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+                <rect
+                  x="9"
+                  y="2"
+                  width="6"
+                  height="12"
+                  rx="3"
+                  fill="oklch(0.55 0.02 60)"
+                />
+                <path
+                  d="M5 11a7 7 0 0 0 14 0"
+                  stroke="oklch(0.55 0.02 60)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="12"
+                  y1="18"
+                  x2="12"
+                  y2="22"
+                  stroke="oklch(0.55 0.02 60)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            ) : isRecording ? (
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 5,
+                  background: "oklch(0.99 0.005 80)",
+                }}
+              />
             ) : (
               <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
                 <rect x="9" y="2" width="6" height="12" rx="3" fill="oklch(0.99 0.005 80)" />
