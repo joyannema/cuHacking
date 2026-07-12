@@ -71,6 +71,9 @@ export default function SynapseApp() {
   const [profile, setProfile] = useState<Profile>({ name: "alex rivera", username: "alexrivera", email: "alex@synapse.app", bio: "" });
   const [draftProfile, setDraftProfile] = useState<Profile | null>(null);
   const [accountSaved, setAccountSaved] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [insight, setInsight] = useState<string | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
 
   const [todosEditMode, setTodosEditMode] = useState(false);
   const [selectedTodoIds, setSelectedTodoIds] = useState<number[]>([]);
@@ -222,12 +225,27 @@ export default function SynapseApp() {
     return promise;
   };
 
+  const fetchInsight = async (id: string) => {
+    setInsightLoading(true);
+    try {
+      const response = await fetch(`/api/insight?userId=${encodeURIComponent(id)}`);
+      const data = await response.json();
+      setInsight(response.ok && data.insight ? data.insight : null);
+    } catch (err) {
+      console.error("fetchInsight failed:", err);
+      setInsight(null);
+    } finally {
+      setInsightLoading(false);
+    }
+  };
+
   const signIn = (user: AuthUser) => {
     setProfile((prev) => ({ ...prev, username: user.username, name: user.username }));
     setUserId(user.userId);
     setNotes(SEED_NOTES);
     setScreen("stream");
     ensureSharedTune();
+    fetchInsight(user.userId);
 
     // Mock notes stay client-side only (not written to the db) — real saved
     // notes load in and sit alongside them, newest first.
@@ -439,6 +457,31 @@ export default function SynapseApp() {
 
     // Update UI immediately
     setNotes((prev) => [newNote, ...prev]);
+
+    // Save to MongoDB
+    try {
+      const response = await fetch("/api/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          category: newNote.category,
+          title: newNote.title,
+          text: newNote.text,
+          tags: newNote.tags,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save note");
+      }
+
+      console.log("Saved note to DB");
+    } catch (err) {
+      console.error("Database save failed:", err);
+    }
 
     setOverlayOpen(false);
     setIsRecording(false);
@@ -731,6 +774,8 @@ export default function SynapseApp() {
           todos={todos}
           todosEditMode={todosEditMode}
           selectedTodoIds={selectedTodoIds}
+          insight={insight}
+          insightLoading={insightLoading}
           onGoStream={goStream}
           onToggleEditMode={toggleTodosEditMode}
           onToggleTodo={toggleTodo}

@@ -5,6 +5,8 @@ export interface UserDoc {
   username: string;
   passwordHash: string;
   createdAt: Date;
+  insightText?: string;
+  insightGeneratedAt?: Date;
 }
 
 export interface CategoryDoc {
@@ -17,8 +19,8 @@ export interface CategoryDoc {
 export interface NoteDoc {
   _id?: ObjectId;
   userId: ObjectId;
-  category: string;
-  title: string;
+  categoryId: ObjectId | null;
+  title?: string;
   text: string;
   tags: string[];
   mood: string | null;

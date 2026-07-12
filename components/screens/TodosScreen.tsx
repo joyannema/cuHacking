@@ -1,11 +1,13 @@
 import PaperDecor from "../PaperDecor";
-import { CATEGORY_LABELS, CATEGORY_PALETTE, DAILY_TIP, PAPER_BG, PAPER_BG_SIZE, seededRand } from "@/lib/data";
+import { CATEGORY_LABELS, CATEGORY_PALETTE, INSIGHT_FALLBACK_TEXT, PAPER_BG, PAPER_BG_SIZE, seededRand } from "@/lib/data";
 import type { Note } from "@/lib/types";
 
 export default function TodosScreen({
   todos,
   todosEditMode,
   selectedTodoIds,
+  insight,
+  insightLoading,
   onGoStream,
   onToggleEditMode,
   onToggleTodo,
@@ -16,6 +18,8 @@ export default function TodosScreen({
   todos: Note[];
   todosEditMode: boolean;
   selectedTodoIds: number[];
+  insight: string | null;
+  insightLoading: boolean;
   onGoStream: () => void;
   onToggleEditMode: () => void;
   onToggleTodo: (id: number) => void;
@@ -98,9 +102,16 @@ export default function TodosScreen({
           }}
         >
           <div style={{ position: "absolute", top: -6, left: 20, width: 10, height: 10, borderRadius: "50%", background: "oklch(0.65 0.15 25)", boxShadow: "0 1px 2px rgba(0,0,0,0.25)" }} />
-          <p style={{ margin: 0, fontFamily: "'Caveat',cursive", fontSize: 19, lineHeight: 1.35, color: "oklch(0.4 0.05 55)" }}>
-            {DAILY_TIP.text} <span style={{ color: "oklch(0.6 0.02 60)", fontSize: 16 }}>{DAILY_TIP.place}</span>
-          </p>
+          {insightLoading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <div style={{ height: 14, width: "88%", borderRadius: 4, background: "oklch(0.85 0.02 65)", animation: "skeletonPulse 1.3s ease-in-out infinite" }} />
+              <div style={{ height: 14, width: "58%", borderRadius: 4, background: "oklch(0.85 0.02 65)", animation: "skeletonPulse 1.3s ease-in-out infinite" }} />
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontFamily: "'Caveat',cursive", fontSize: 19, lineHeight: 1.35, color: "oklch(0.4 0.05 55)" }}>
+              {insight || INSIGHT_FALLBACK_TEXT}
+            </p>
+          )}
         </div>
 
         {showClearCompleted && (

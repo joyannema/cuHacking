@@ -143,7 +143,7 @@ export default function StreamScreen({
           <div style={{ flex: 1, height: 0, borderTop: "1.6px dashed oklch(0.68 0.02 60)" }} />
         </div>
 
-        <div style={{ padding: "8px 0 20px" }}>
+        <div style={{ padding: "36px 0 20px" }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {notes.map((note, i) => {
               const align = STREAM_ALIGNS[i % 3];

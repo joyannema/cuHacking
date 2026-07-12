@@ -74,10 +74,8 @@ export const STICKER_DEFS: { kind: string; svg: { __html: string } }[] = [
   { kind: "circle", svg: { __html: '<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="oklch(0.5 0.1 300)" stroke-width="1.8" fill="none" stroke-dasharray="2 4"/></svg>' } },
 ];
 
-export const DAILY_TIP = {
-  text: "you've mentioned ice cream a few times lately —",
-  place: "maybe swing by Honeycone this week?",
-};
+export const INSIGHT_FALLBACK_TEXT =
+  "keep jotting things down — patterns will start showing up here once there's enough to notice.";
 
 export const JOURNAL_CANVAS_W = 282;
 export const JOURNAL_CANVAS_H = 460;
