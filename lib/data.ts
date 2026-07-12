@@ -10,6 +10,17 @@ export const CATEGORY_PALETTE = [
   { bg: "oklch(0.9 0.045 190)", fg: "oklch(0.42 0.08 190)" },
 ];
 
+// Deterministic pseudo-random color per category, so different categories
+// land on different palette entries instead of every new note defaulting to
+// the same (pink) swatch. Same category always maps to the same color.
+export function colorIdxForCategory(category: string) {
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = (hash * 31 + category.charCodeAt(i)) >>> 0;
+  }
+  return hash % CATEGORY_PALETTE.length;
+}
+
 export const CLIP_PRESETS = [
   "polygon(3% 0%, 100% 0%, 100% 93%, 95% 100%, 0% 100%, 0% 5%)",
   "polygon(0% 4%, 5% 0%, 100% 0%, 100% 96%, 94% 100%, 0% 100%)",

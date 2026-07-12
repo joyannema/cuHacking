@@ -1,61 +1,97 @@
-import { ObjectId } from "mongodb";
-import { NextResponse } from "next/server";
+// app/api/notes/route.ts
+// Persists notes (and the categories they use) to MongoDB, and lets the
+// client reload a user's saved notes at sign-in.
+
+import { NextRequest, NextResponse } from "next/server";
+import { ObjectId, type WithId } from "mongodb";
 import { getCategoriesCollection, getNotesCollection } from "@/lib/db/collections";
-import { listNotesForUser } from "@/lib/db/notes";
-import { CATEGORY_LABELS } from "@/lib/data";
-import type { CategorySlug } from "@/lib/types";
+import type { NoteDoc } from "@/lib/db/types";
+import { formatRelativeTime } from "@/lib/data";
+import type { Note } from "@/lib/types";
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { userId, category, title, text, tags } = body;
-
-    if (typeof userId !== "string" || !ObjectId.isValid(userId)) {
-      return NextResponse.json({ error: "Valid userId is required" }, { status: 400 });
-    }
-    if (typeof category !== "string" || typeof text !== "string") {
-      return NextResponse.json({ error: "category and text are required" }, { status: 400 });
-    }
-
-    const userObjectId = new ObjectId(userId);
-    const label = CATEGORY_LABELS[category as CategorySlug] || category;
-
-    const categories = await getCategoriesCollection();
-    const categoryResult = await categories.findOneAndUpdate(
-      { userId: userObjectId, label },
-      { $setOnInsert: { userId: userObjectId, label, createdAt: new Date() } },
-      { upsert: true, returnDocument: "after" }
-    );
-
-    const notes = await getNotesCollection();
-    const result = await notes.insertOne({
-      userId: userObjectId,
-      categoryId: categoryResult?._id ?? null,
-      title: typeof title === "string" ? title : undefined,
-      text,
-      tags: Array.isArray(tags) ? tags.filter((t) => typeof t === "string") : [],
-      createdAt: new Date(),
-    });
-
-    return NextResponse.json({ success: true, id: result.insertedId });
-  } catch (error) {
-    console.error("notes POST error:", error);
-    return NextResponse.json({ error: "Failed to save note" }, { status: 500 });
-  }
+function noteDocToNote(doc: WithId<NoteDoc>): Note {
+  return {
+    // ObjectIds are unique, so a numeric slice of the hex string is a safe,
+    // collision-free id for the frontend's number-keyed Note.id.
+    id: parseInt(doc._id.toHexString().slice(0, 12), 16),
+    category: doc.category as Note["category"],
+    text: doc.text,
+    tags: doc.tags,
+    time: formatRelativeTime(doc.createdAt),
+    colorIdx: doc.colorIdx,
+    title: doc.title || undefined,
+    mood: (doc.mood as Note["mood"]) || undefined,
+    isTodo: doc.isTodo || undefined,
+    todoText: doc.todoText || undefined,
+    todoDone: doc.todoDone || undefined,
+    photo: doc.photo || undefined,
+  };
 }
 
-export async function GET(req: Request) {
-  try {
-    const userId = new URL(req.url).searchParams.get("userId");
+export async function GET(req: NextRequest) {
+  const userId = req.nextUrl.searchParams.get("userId");
+  if (!userId) {
+    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+  }
 
-    if (!userId || !ObjectId.isValid(userId)) {
-      return NextResponse.json({ error: "Valid userId is required" }, { status: 400 });
+  let userObjectId: ObjectId;
+  try {
+    userObjectId = new ObjectId(userId);
+  } catch {
+    return NextResponse.json({ error: "Invalid userId" }, { status: 400 });
+  }
+
+  const notesCol = await getNotesCollection();
+  const docs = await notesCol.find({ userId: userObjectId }).sort({ createdAt: -1 }).toArray();
+
+  return NextResponse.json({ notes: docs.map(noteDocToNote) });
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { userId, category, title, text, tags, mood, isTodo, todoText, photo, colorIdx } = body;
+
+    if (!userId || !category || !text) {
+      return NextResponse.json({ error: "userId, category, and text are required" }, { status: 400 });
     }
 
-    const notes = await listNotesForUser(new ObjectId(userId));
-    return NextResponse.json({ notes });
-  } catch (error) {
-    console.error("notes GET error:", error);
-    return NextResponse.json({ error: "Failed to fetch notes" }, { status: 500 });
+    let userObjectId: ObjectId;
+    try {
+      userObjectId = new ObjectId(userId);
+    } catch {
+      return NextResponse.json({ error: "Invalid userId" }, { status: 400 });
+    }
+
+    const categoriesCol = await getCategoriesCollection();
+    await categoriesCol.updateOne(
+      { userId: userObjectId, label: category },
+      { $setOnInsert: { userId: userObjectId, label: category, createdAt: new Date() } },
+      { upsert: true }
+    );
+
+    const notesCol = await getNotesCollection();
+    const doc: NoteDoc = {
+      userId: userObjectId,
+      category,
+      title: title || "",
+      text,
+      tags: Array.isArray(tags) ? tags : [],
+      mood: mood ?? null,
+      isTodo: !!isTodo,
+      todoText: todoText ?? null,
+      todoDone: false,
+      photo: !!photo,
+      colorIdx: typeof colorIdx === "number" ? colorIdx : 0,
+      createdAt: new Date(),
+    };
+
+    const result = await notesCol.insertOne(doc);
+
+    return NextResponse.json({ note: noteDocToNote({ ...doc, _id: result.insertedId }) });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("notes POST error:", message);
+    return NextResponse.json({ error: "Failed to save note" }, { status: 500 });
   }
 }

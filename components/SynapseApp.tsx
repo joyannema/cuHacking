@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { CATEGORY_LABELS, SEED_NOTES, generateTitle, seededRand } from "@/lib/data";
+import { CATEGORY_LABELS, SEED_NOTES, colorIdxForCategory, generateTitle, seededRand } from "@/lib/data";
 import type { CategoryMeta, CategorySlug, JournalElement, JournalPage, Note, Profile, Screen } from "@/lib/types";
 import SigninScreen, { type AuthUser } from "./screens/SigninScreen";
 import StreamScreen from "./screens/StreamScreen";
@@ -59,7 +59,6 @@ export default function SynapseApp() {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [classifiedNote, setClassifiedNote] = useState<any>(null);
   const [attachedPhoto, setAttachedPhoto] = useState(false);
   const [voiceAppendMode, setVoiceAppendMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,7 +70,6 @@ export default function SynapseApp() {
   const [profile, setProfile] = useState<Profile>({ name: "alex rivera", username: "alexrivera", email: "alex@synapse.app", bio: "" });
   const [draftProfile, setDraftProfile] = useState<Profile | null>(null);
   const [accountSaved, setAccountSaved] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [insight, setInsight] = useState<string | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
 
@@ -318,7 +316,6 @@ export default function SynapseApp() {
     setOverlayOpen(true);
     setIsRecording(false);
     setTranscript("");
-    setClassifiedNote(null);
     setAttachedPhoto(false);
     setVoiceAppendMode(false);
   };
@@ -326,7 +323,6 @@ export default function SynapseApp() {
     setOverlayOpen(true);
     setIsRecording(false);
     setTranscript("");
-    setClassifiedNote(null);
     setAttachedPhoto(false);
     setVoiceAppendMode(true);
   };
@@ -336,7 +332,6 @@ export default function SynapseApp() {
     setOverlayOpen(false);
     setIsRecording(false);
     setTranscript("");
-    setClassifiedNote(null);
     setVoiceAppendMode(false);
   };
 
@@ -358,41 +353,30 @@ export default function SynapseApp() {
 
     recorder.onstop = async () => {
       try {
-        // Show processing state while ElevenLabs/API works
+        // Show processing state while ElevenLabs transcribes. Gemini
+        // classification is deliberately NOT run here anymore — it now runs
+        // after the note is saved (see saveNote), so the mic step only waits
+        // on speech-to-text instead of speech-to-text + Gemini.
         setIsProcessing(true);
 
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
 
         const formData = new FormData();
         formData.append("audio", audioBlob, "recording.webm");
-        formData.append(
-          "existingCategories",
-          JSON.stringify(Array.from(new Set(notes.map((n) => n.category))))
-        );
 
-        const response = await fetch("/api/classify", {
+        const response = await fetch("/api/transcribe", {
           method: "POST",
           body: formData,
         });
 
         const data = await response.json();
-        console.log("Frontend received:", data);
 
         if (!response.ok) {
-          throw new Error(data.error || "Classification failed");
+          throw new Error(data.error || "Transcription failed");
         }
 
-        const newBit = data.details ?? data.transcript ?? "";
+        const newBit = data.transcript ?? "";
         setTranscript((prev) => (prev ? [prev, newBit].filter(Boolean).join(" ") : newBit));
-        setClassifiedNote((prev: any) =>
-          prev
-            ? {
-                ...data,
-                details: [prev.details, data.details].filter(Boolean).join(" "),
-                tags: Array.from(new Set([...(prev.tags ?? []), ...(data.tags ?? [])])),
-              }
-            : data
-        );
       } catch (err) {
         console.error(err);
       } finally {
@@ -440,19 +424,25 @@ export default function SynapseApp() {
 
     if (typeTimer.current) clearInterval(typeTimer.current);
     const tempId = Date.now();
+    const rawTranscript = transcript;
+    const existingCategories = Array.from(new Set(notes.map((n) => n.category)));
 
+    // The note starts out as exactly what ElevenLabs heard — Gemini hasn't
+    // looked at it yet. Classification now happens after the note exists
+    // (the "notes step"), not during the mic step, so recording stays fast.
     const newNote: Note = {
       id: tempId,
-      category: classifiedNote?.category ?? "uncategorized",
-      title: classifiedNote?.title ?? generateTitle(transcript),
-      text: classifiedNote?.details ?? transcript,
-      tags: classifiedNote?.tags ?? [],
-      mood: classifiedNote?.mood,
+      category: "uncategorized" as Note["category"],
+      title: generateTitle(rawTranscript),
+      text: rawTranscript,
+      tags: [],
+      mood: undefined,
       time: "now",
-      colorIdx: 0,
+      colorIdx: colorIdxForCategory("uncategorized"),
       organizing: true,
-      isTodo: classifiedNote?.is_todo === true,
-      todoText: classifiedNote?.title ?? transcript,
+      classifying: true,
+      isTodo: false,
+      todoText: rawTranscript,
     };
 
     // Update UI immediately
@@ -486,15 +476,54 @@ export default function SynapseApp() {
     setOverlayOpen(false);
     setIsRecording(false);
     setTranscript("");
-    setClassifiedNote(null);
     setAttachedPhoto(false);
 
     // Clear the "organizing" shimmer on a fixed timer — this is a UI
-    // animation, so it must not depend on the DB save (which could be slow
-    // or hang) ever resolving.
+    // animation, so it must not depend on Gemini or the DB save (either of
+    // which could be slow or hang) ever resolving.
     setTimeout(() => {
       setNotes((prev) => prev.map((n) => (n.id === tempId ? { ...n, organizing: false } : n)));
     }, 1400);
+
+    // Classify with Gemini now that the note already exists. If this fails,
+    // the note just stays as its raw, uncategorized transcript.
+    let classified: any = null;
+
+    try {
+      const response = await fetch("/api/classify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: rawTranscript, existingCategories }),
+      });
+
+      if (response.ok) {
+        classified = await response.json();
+        setNotes((prev) =>
+          prev.map((n) =>
+            n.id === tempId
+              ? {
+                  ...n,
+                  category: classified?.category ?? n.category,
+                  title: classified?.title ?? n.title,
+                  text: classified?.details ?? n.text,
+                  tags: classified?.tags ?? n.tags,
+                  mood: classified?.mood ?? n.mood,
+                  isTodo: classified?.is_todo === true,
+                  todoText: classified?.title ?? n.todoText,
+                  colorIdx: colorIdxForCategory(classified?.category ?? n.category),
+                  classifying: false,
+                }
+              : n
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Gemini classification failed:", err);
+    } finally {
+      // The spinner is purely about Gemini having responded (successfully or
+      // not) — always clear it here so it can't get stuck.
+      setNotes((prev) => prev.map((n) => (n.id === tempId ? { ...n, classifying: false } : n)));
+    }
 
     // Persist to MongoDB in the background, then swap the optimistic note
     // for the saved one (its id is derived from the note's real ObjectId).
@@ -506,14 +535,14 @@ export default function SynapseApp() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId,
-            category: newNote.category,
-            title: newNote.title,
-            text: newNote.text,
-            tags: newNote.tags,
-            mood: newNote.mood,
-            isTodo: newNote.isTodo,
-            todoText: newNote.todoText,
-            colorIdx: newNote.colorIdx,
+            category: classified?.category ?? newNote.category,
+            title: classified?.title ?? newNote.title,
+            text: classified?.details ?? newNote.text,
+            tags: classified?.tags ?? newNote.tags,
+            mood: classified?.mood ?? newNote.mood,
+            isTodo: classified?.is_todo === true,
+            todoText: classified?.title ?? newNote.todoText,
+            colorIdx: colorIdxForCategory(classified?.category ?? newNote.category),
           }),
         });
 

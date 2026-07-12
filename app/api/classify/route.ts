@@ -1,38 +1,17 @@
 // app/api/classify/route.ts
-// Receives an audio recording from the frontend, runs it through
-// ElevenLabs (speech-to-text) then Gemini (classification), returns JSON.
+// Takes an already-transcribed note (see /api/transcribe, which handles the
+// ElevenLabs speech-to-text step) and runs it through Gemini for
+// classification. Split out from transcription so this can run in the notes
+// step, after the note already exists, instead of blocking the mic step.
 //
-// .env.local (or .env) needs: ELEVENLABS_API_KEY, GEMINI_API_KEY
+// .env.local (or .env) needs: GEMINI_API_KEY
 // Next.js loads these automatically - no dotenv needed here.
 
 import { NextRequest, NextResponse } from "next/server";
 import { isMood, MOODS } from "@/lib/moods";
 
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Step 1: send audio to ElevenLabs Scribe, get back a transcript string
-async function transcribeAudio(audioBlob: Blob, filename: string): Promise<string> {
-  const form = new FormData();
-  form.append("file", audioBlob, filename);
-  form.append("model_id", "scribe_v1");
-
-  const response = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-    method: "POST",
-    headers: { "xi-api-key": ELEVENLABS_API_KEY! },
-    body: form,
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`ElevenLabs STT failed (${response.status}): ${errText}`);
-  }
-
-  const data = await response.json();
-  return data.text;
-}
-
-// Step 2: send transcript to Gemini, get back structured JSON
 async function classifyTranscript(transcript: string, existingCategories: string[] = []) {
   const categoryContext =
     existingCategories.length > 0
@@ -94,29 +73,27 @@ Return ONLY valid JSON in exactly this format:
 
   if (!rawText) {
     throw new Error("Gemini returned no text.");
-  } 
+  }
 
   const cleaned = rawText.replace(/```json|```/g, "").trim();
 
   return JSON.parse(cleaned);
-  }
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const audioFile = formData.get("audio") as File | null;
-    const existingCategoriesRaw = formData.get("existingCategories") as string | null;
-    const existingCategories: string[] = existingCategoriesRaw ? JSON.parse(existingCategoriesRaw) : [];
+    const body = await req.json();
+    const transcript: string | undefined = body.transcript;
+    const existingCategories: string[] = Array.isArray(body.existingCategories)
+      ? body.existingCategories
+      : [];
 
-    if (!audioFile) {
-      return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
+    if (!transcript || !transcript.trim()) {
+      return NextResponse.json({ error: "No transcript provided" }, { status: 400 });
     }
 
-    const transcript = await transcribeAudio(audioFile, audioFile.name || "recording.webm");
     const classified = await classifyTranscript(transcript, existingCategories);
     if (!isMood(classified.mood)) classified.mood = "neutral";
-
-    console.log("Gemini response:", classified);
 
     return NextResponse.json({ transcript, ...classified });
   } catch (err: unknown) {

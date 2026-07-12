@@ -28,6 +28,7 @@ export interface Note {
   time: string;
   colorIdx: number;
   organizing?: boolean;
+  classifying?: boolean;
   title?: string;
   _titleSeed?: number;
   photo?: boolean;

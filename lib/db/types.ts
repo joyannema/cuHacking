@@ -19,7 +19,7 @@ export interface CategoryDoc {
 export interface NoteDoc {
   _id?: ObjectId;
   userId: ObjectId;
-  categoryId: ObjectId | null;
+  category: string;
   title?: string;
   text: string;
   tags: string[];

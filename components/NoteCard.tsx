@@ -97,13 +97,33 @@ export default function NoteCard({
           style={{
             marginLeft: "auto",
             flexShrink: 0,
-            fontFamily: "'IBM Plex Mono',monospace",
-            fontSize: 8.5,
-            color: "oklch(0.58 0.02 60)",
-            whiteSpace: "nowrap",
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
           }}
         >
-          {note.time}
+          {note.classifying && !note.organizing && (
+            <span
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: "50%",
+                border: "1.4px solid oklch(0.85 0.02 70)",
+                borderTopColor: "oklch(0.55 0.1 45)",
+                animation: "spin 0.7s linear infinite",
+              }}
+            />
+          )}
+          <span
+            style={{
+              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: 8.5,
+              color: "oklch(0.58 0.02 60)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {note.time}
+          </span>
         </span>
       </div>
       <p
