@@ -492,13 +492,13 @@ export default function SynapseApp() {
     // (the "notes step"), not during the mic step, so recording stays fast.
     const newNote: Note = {
       id: tempId,
-      category: "uncategorized" as Note["category"],
+      category: "random_thoughts" as Note["category"],
       title: generateTitle(rawTranscript),
       text: rawTranscript,
       tags: [],
       mood: undefined,
       time: "now",
-      colorIdx: colorIdxForCategory("uncategorized"),
+      colorIdx: colorIdxForCategory("random_thoughts"),
       organizing: true,
       classifying: true,
       isTodo: false,
@@ -522,7 +522,7 @@ export default function SynapseApp() {
     }, 1400);
 
     // Classify with Gemini now that the note already exists. If this fails,
-    // the note just stays as its raw, uncategorized transcript.
+    // the note just stays filed under "random thoughts" with its raw transcript.
     let classified: any = null;
 
     try {
@@ -731,11 +731,11 @@ export default function SynapseApp() {
   });
   const noteCategorySlugs = Array.from(new Set(notes.map((n) => n.category)));
   const combinedSlugs = Array.from(new Set([...CATEGORY_SLUGS, ...noteCategorySlugs]));
-  const allCategories: CategoryMeta[] = combinedSlugs.map((slug, i) => ({
+  const allCategories: CategoryMeta[] = combinedSlugs.map((slug) => ({
     slug,
     label: CATEGORY_LABELS[slug] || slug.replace(/[_-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
     count: counts[slug] || 0,
-    colorIdx: i,
+    colorIdx: colorIdxForCategory(slug),
   }));
 
   const rankedCategories = [...allCategories].sort((a, b) => b.count - a.count);

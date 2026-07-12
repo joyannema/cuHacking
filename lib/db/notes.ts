@@ -21,7 +21,7 @@ export function objectIdToNumericId(id: ObjectId): number {
 export function toClientNote(doc: NoteDoc): Note {
   return {
     id: objectIdToNumericId(doc._id!),
-    category: (doc.category || "uncategorized") as CategorySlug,
+    category: (doc.category || "random_thoughts") as CategorySlug,
     title: doc.title,
     text: doc.text,
     tags: doc.tags ?? [],

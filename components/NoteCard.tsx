@@ -1,5 +1,5 @@
 // import type { CSSProperties } from "react"; — only needed by the disabled hover-lift styling
-import { CATEGORY_LABELS, CATEGORY_PALETTE, CLIP_PRESETS, generateTitle, seededRand } from "@/lib/data";
+import { CATEGORY_LABELS, CATEGORY_PALETTE, CLIP_PRESETS, colorIdxForCategory, generateTitle, seededRand } from "@/lib/data";
 import type { Note } from "@/lib/types";
 
 export default function NoteCard({
@@ -11,13 +11,14 @@ export default function NoteCard({
   onClick: () => void;
   variant?: "grid" | "stream";
 }) {
-  const pal = CATEGORY_PALETTE[note.colorIdx % CATEGORY_PALETTE.length];
+  const colorIdx = colorIdxForCategory(note.category);
+  const pal = CATEGORY_PALETTE[colorIdx % CATEGORY_PALETTE.length];
   const rot = seededRand(note.id * 3 + 1, -3.2, 3.2);
   const mb = seededRand(note.id * 7 + 2, 14, 28);
   const tapeLeft = seededRand(note.id * 5 + 3, 14, 60);
   const tapeRot = seededRand(note.id * 11 + 4, -8, 8);
   const clip = CLIP_PRESETS[note.id % CLIP_PRESETS.length];
-  const hue = 80 + note.colorIdx * 40;
+  const hue = 80 + colorIdx * 40;
   const title = note.title || generateTitle(note.text, note._titleSeed);
 
   return (

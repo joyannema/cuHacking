@@ -1,5 +1,5 @@
 import PaperDecor from "../PaperDecor";
-import { PAPER_BG, PAPER_BG_SIZE, CATEGORY_PALETTE, CLIP_PRESETS, generateTitle } from "@/lib/data";
+import { PAPER_BG, PAPER_BG_SIZE, CATEGORY_PALETTE, CLIP_PRESETS, colorIdxForCategory, generateTitle } from "@/lib/data";
 import type { Note } from "@/lib/types";
 
 export default function NoteScreen({
@@ -23,9 +23,10 @@ export default function NoteScreen({
   onTogglePhoto: () => void;
   onVoiceAppend: () => void;
 }) {
-  const pal = CATEGORY_PALETTE[note.colorIdx % CATEGORY_PALETTE.length];
+  const colorIdx = colorIdxForCategory(note.category);
+  const pal = CATEGORY_PALETTE[colorIdx % CATEGORY_PALETTE.length];
   const clip = CLIP_PRESETS[note.id % CLIP_PRESETS.length];
-  const hue = 80 + note.colorIdx * 40;
+  const hue = 80 + colorIdx * 40;
   const title = note.title || generateTitle(note.text, note._titleSeed);
 
   return (

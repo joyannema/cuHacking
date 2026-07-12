@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { PAPER_BG, PAPER_BG_SIZE } from "@/lib/data";
 
@@ -72,7 +71,8 @@ export default function SigninScreen({ onSignIn }: { onSignIn: (user: AuthUser) 
         animation: "screenIn 0.3s ease-out",
       }}
     >
-      <Image src="/logo.png" alt="synapse" width={440} height={293} priority style={{ width: 440, height: "auto" }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.svg" alt="synapse" width={320} height={70} style={{ width: 320, height: "auto" }} />
 
       <p
         style={{

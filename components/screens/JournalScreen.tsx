@@ -4,6 +4,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import {
   CATEGORY_LABELS,
   CATEGORY_PALETTE,
+  colorIdxForCategory,
   JOURNAL_CANVAS_H,
   JOURNAL_CANVAS_W,
   JOURNAL_SLIVER_W,
@@ -80,8 +81,9 @@ export default function JournalScreen({
     const page = pages[idx] || { elements: [] };
     return page.elements.map((el) => {
       const noteSrc = el.type === "note" ? notes.find((n) => n.id === el.entryId) : null;
-      const notePal = noteSrc ? CATEGORY_PALETTE[noteSrc.colorIdx % CATEGORY_PALETTE.length] : null;
-      const hue = el.type === "note" && noteSrc ? 80 + noteSrc.colorIdx * 40 : 260;
+      const noteColorIdx = noteSrc ? colorIdxForCategory(noteSrc.category) : 0;
+      const notePal = noteSrc ? CATEGORY_PALETTE[noteColorIdx % CATEGORY_PALETTE.length] : null;
+      const hue = el.type === "note" && noteSrc ? 80 + noteColorIdx * 40 : 260;
       return { el, noteSrc, notePal, hue };
     });
   };

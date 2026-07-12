@@ -1,6 +1,7 @@
 // import type { CSSProperties } from "react"; — only needed by the disabled hover-lift styling
-import { CLIP_PRESETS, seededRand } from "@/lib/data";
+import { CATEGORY_PALETTE, CLIP_PRESETS, seededRand } from "@/lib/data";
 import type { CategoryMeta } from "@/lib/types";
+import FolderIcon from "./FolderIcon";
 
 export default function FolderCard({
   category,
@@ -18,6 +19,7 @@ export default function FolderCard({
   const pinRot = seededRand(category.colorIdx * 21 + 9, -20, 20);
   const hue = 80 + category.colorIdx * 40;
   const clip = CLIP_PRESETS[category.colorIdx % CLIP_PRESETS.length];
+  const pal = CATEGORY_PALETTE[category.colorIdx % CATEGORY_PALETTE.length];
 
   return (
     <button
@@ -76,7 +78,7 @@ export default function FolderCard({
           pointerEvents: "none",
         }}
       />
-      <span style={{ fontSize: mini ? 30 : 36 }}>📁</span>
+      <FolderIcon color={pal.bg} size={mini ? 30 : 36} />
       <span
         style={{
           fontFamily: "'Space Grotesk',sans-serif",

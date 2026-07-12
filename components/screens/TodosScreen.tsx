@@ -1,5 +1,5 @@
 import PaperDecor from "../PaperDecor";
-import { CATEGORY_LABELS, CATEGORY_PALETTE, INSIGHT_FALLBACK_TEXT, PAPER_BG, PAPER_BG_SIZE, seededRand } from "@/lib/data";
+import { CATEGORY_LABELS, CATEGORY_PALETTE, colorIdxForCategory, INSIGHT_FALLBACK_TEXT, PAPER_BG, PAPER_BG_SIZE, seededRand } from "@/lib/data";
 import type { Note } from "@/lib/types";
 
 export default function TodosScreen({
@@ -134,7 +134,8 @@ export default function TodosScreen({
         )}
 
         {sorted.map((n) => {
-          const pal = CATEGORY_PALETTE[n.colorIdx % CATEGORY_PALETTE.length];
+          const colorIdx = colorIdxForCategory(n.category);
+          const pal = CATEGORY_PALETTE[colorIdx % CATEGORY_PALETTE.length];
           const done = !!n.todoDone;
           const selected = selectedTodoIds.includes(n.id);
           const tapeRot = seededRand(n.id * 11 + 40, -6, 6);
@@ -174,7 +175,7 @@ export default function TodosScreen({
                     left: 24,
                     width: 34,
                     height: 12,
-                    background: `repeating-linear-gradient(45deg, oklch(0.88 0.05 ${80 + n.colorIdx * 40} / 0.85) 0 4px, oklch(0.94 0.03 ${80 + n.colorIdx * 40} / 0.7) 4px 8px)`,
+                    background: `repeating-linear-gradient(45deg, oklch(0.88 0.05 ${80 + colorIdx * 40} / 0.85) 0 4px, oklch(0.94 0.03 ${80 + colorIdx * 40} / 0.7) 4px 8px)`,
                     borderRadius: 2,
                     transform: `rotate(${tapeRot}deg)`,
                     boxShadow: "0 1px 2px rgba(0,0,0,0.08)",

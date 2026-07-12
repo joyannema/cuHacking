@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRef, useState } from "react";
 import PaperDecor from "../PaperDecor";
 import NoteCard from "../NoteCard";
@@ -66,12 +65,13 @@ export default function StreamScreen({
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(28px, env(safe-area-inset-top)) 40px 12px" }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <Image
-              src="/logo_noslogan.png"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-mark.svg"
               alt="synapse"
-              width={300}
-              height={72}
-              style={{ width: 300, height: "auto", marginBottom: 12 }}
+              width={64}
+              height={45}
+              style={{ width: 64, height: "auto", marginBottom: 8 }}
             />
             <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "oklch(0.5 0.03 60)" }}>
               hey — what&apos;s on your mind?
