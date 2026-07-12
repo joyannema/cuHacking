@@ -1,3 +1,4 @@
+// import type { CSSProperties } from "react"; — only needed by the disabled hover-lift styling
 import { CATEGORY_LABELS, CATEGORY_PALETTE, CLIP_PRESETS, generateTitle, seededRand } from "@/lib/data";
 import type { Note } from "@/lib/types";
 
@@ -22,6 +23,7 @@ export default function NoteCard({
   return (
     <div
       onClick={onClick}
+      // className="hover-lift" — disabled for now, was causing lag
       style={{
         position: "relative",
         breakInside: "avoid",

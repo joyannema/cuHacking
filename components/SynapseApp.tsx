@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { CATEGORY_LABELS, SEED_NOTES, colorIdxForCategory, generateTitle, seededRand } from "@/lib/data";
 import type { CategoryMeta, CategorySlug, JournalElement, JournalPage, Note, Profile, Screen } from "@/lib/types";
+import type { Mood } from "@/lib/moods";
 import SigninScreen, { type AuthUser } from "./screens/SigninScreen";
 import StreamScreen from "./screens/StreamScreen";
 import CabinetScreen from "./screens/CabinetScreen";
@@ -18,11 +19,16 @@ import CaptureOverlay from "./CaptureOverlay";
 const CATEGORY_SLUGS = Object.keys(CATEGORY_LABELS) as CategorySlug[];
 const TAB_SCREENS = new Set<Screen>(["stream", "todos", "journal", "settings"]);
 const MOOD_FADE_IN_MS = 2000;
+const MOOD_FADE_OUT_MS = 2000;
+const RECENT_MOOD_SAMPLE_SIZE = 5;
 
-function fadeAudioVolume(audio: HTMLAudioElement, to: number, durationMs: number, onDone?: () => void) {
+// cancelToken lets a newer fade (e.g. fade-in starting right after a fade-out
+// was requested) supersede an older one instead of both fighting over volume.
+function fadeAudioVolume(audio: HTMLAudioElement, to: number, durationMs: number, cancelToken: { cancelled: boolean }, onDone?: () => void) {
   const from = audio.volume;
   const start = performance.now();
   const step = (now: number) => {
+    if (cancelToken.cancelled) return;
     const t = Math.min(1, Math.max(0, (now - start) / durationMs));
     audio.volume = from + (to - from) * t;
     if (t < 1) {
@@ -32,6 +38,22 @@ function fadeAudioVolume(audio: HTMLAudioElement, to: number, durationMs: number
     }
   };
   requestAnimationFrame(step);
+}
+
+function averageMoodOfRecentNotes(notes: Note[]): Mood {
+  const recentMoods = notes.slice(0, RECENT_MOOD_SAMPLE_SIZE).map((n) => n.mood).filter((m): m is Mood => !!m);
+  if (recentMoods.length === 0) return "neutral";
+  const counts = new Map<Mood, number>();
+  recentMoods.forEach((m) => counts.set(m, (counts.get(m) ?? 0) + 1));
+  let best = recentMoods[0];
+  let bestCount = 0;
+  counts.forEach((count, mood) => {
+    if (count > bestCount) {
+      bestCount = count;
+      best = mood;
+    }
+  });
+  return best;
 }
 
 interface JournalDragSession {
@@ -91,6 +113,7 @@ export default function SynapseApp() {
   const moodAudioRef = useRef<HTMLAudioElement | null>(null);
   const sharedTuneUrlRef = useRef<string | null>(null);
   const sharedTunePromiseRef = useRef<Promise<string | null> | null>(null);
+  const moodFadeTokenRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
   const journalDragRef = useRef<JournalDragSession | null>(null);
   const trayDragRef = useRef<TrayDragSession | null>(null);
@@ -200,13 +223,13 @@ export default function SynapseApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const ensureSharedTune = () => {
+  const ensureSharedTune = (mood: Mood) => {
     if (sharedTuneUrlRef.current) return Promise.resolve(sharedTuneUrlRef.current);
     if (sharedTunePromiseRef.current) return sharedTunePromiseRef.current;
     const promise = fetch("/api/music", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mood: "neutral" }),
+      body: JSON.stringify({ mood }),
     })
       .then((res) => (res.ok ? res.blob() : null))
       .then((blob) => {
@@ -242,7 +265,7 @@ export default function SynapseApp() {
     setUserId(user.userId);
     setNotes(SEED_NOTES);
     setScreen("stream");
-    ensureSharedTune();
+    ensureSharedTune(averageMoodOfRecentNotes(SEED_NOTES));
     fetchInsight(user.userId);
 
     // Mock notes stay client-side only (not written to the db) — real saved
@@ -251,13 +274,26 @@ export default function SynapseApp() {
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed to load notes"))))
       .then((data) => setNotes([...(data.notes ?? []), ...SEED_NOTES]))
       .catch((err) => console.error("Failed to load notes:", err));
+    playMoodTune();
   };
-  const signOut = () => setScreen("signin");
+  const signOut = () => {
+    moodFadeTokenRef.current.cancelled = true;
+    moodAudioRef.current?.pause();
+    moodAudioRef.current = null;
+    sharedTuneUrlRef.current = null;
+    sharedTunePromiseRef.current = null;
+    setScreen("signin");
+  };
   const toggleMute = () => {
     setMuted((prev) => {
       const next = !prev;
-      if (next) moodAudioRef.current?.pause();
       window.localStorage.setItem("synapse:muted", next ? "1" : "0");
+      if (next) {
+        moodFadeTokenRef.current.cancelled = true;
+        moodAudioRef.current?.pause();
+      } else if (!overlayOpen) {
+        startMoodTunePlayback();
+      }
       return next;
     });
   };
@@ -280,14 +316,9 @@ export default function SynapseApp() {
     setNoteOrigin(screen);
     setActiveNoteId(id);
     setScreen("note");
-    playMoodTune();
   };
-  const closeNote = () => {
-    stopMoodTune();
-    setScreen(noteOrigin || "stream");
-  };
+  const closeNote = () => setScreen(noteOrigin || "stream");
   const deleteNote = () => {
-    stopMoodTune();
     setNotes((prev) => prev.filter((n) => n.id !== activeNoteId));
     setScreen(noteOrigin || "stream");
   };
@@ -318,6 +349,7 @@ export default function SynapseApp() {
     setTranscript("");
     setAttachedPhoto(false);
     setVoiceAppendMode(false);
+    stopMoodTune();
   };
   const openVoiceAppend = () => {
     setOverlayOpen(true);
@@ -325,6 +357,7 @@ export default function SynapseApp() {
     setTranscript("");
     setAttachedPhoto(false);
     setVoiceAppendMode(true);
+    stopMoodTune();
   };
 
   const closeCapture = () => {
@@ -333,6 +366,7 @@ export default function SynapseApp() {
     setIsRecording(false);
     setTranscript("");
     setVoiceAppendMode(false);
+    playMoodTune();
   };
 
   const toggleRecording = async () => {
@@ -394,33 +428,59 @@ export default function SynapseApp() {
 
   const toggleAttachPhoto = () => setAttachedPhoto((v) => !v);
 
-  const playMoodTune = async () => {
-    if (muted) return;
+  const startMoodTunePlayback = async () => {
     try {
-      const url = await ensureSharedTune();
+      const mood = averageMoodOfRecentNotes(notes);
+      const url = await ensureSharedTune(mood);
       if (!url) return;
-      moodAudioRef.current?.pause();
-      const audio = new Audio(url);
+      let audio = moodAudioRef.current;
+      if (!audio || audio.src !== url) {
+        audio?.pause();
+        audio = new Audio(url);
+        audio.loop = true;
+        moodAudioRef.current = audio;
+      }
       audio.volume = 0;
-      moodAudioRef.current = audio;
+      const token = { cancelled: false };
+      moodFadeTokenRef.current.cancelled = true;
+      moodFadeTokenRef.current = token;
       audio
         .play()
-        .then(() => fadeAudioVolume(audio, 1, MOOD_FADE_IN_MS))
+        .then(() => fadeAudioVolume(audio!, 1, MOOD_FADE_IN_MS, token))
         .catch(() => {});
     } catch (err) {
       console.error("playMoodTune failed:", err);
     }
   };
 
+  const playMoodTune = async () => {
+    if (muted) return;
+    startMoodTunePlayback();
+  };
+
   const stopMoodTune = () => {
     const audio = moodAudioRef.current;
     if (!audio) return;
-    moodAudioRef.current = null;
-    audio.pause();
+    const token = { cancelled: false };
+    moodFadeTokenRef.current.cancelled = true;
+    moodFadeTokenRef.current = token;
+    fadeAudioVolume(audio, 0, MOOD_FADE_OUT_MS, token, () => audio.pause());
   };
 
   const saveNote = async () => {
     if (!transcript.trim() || isProcessing) return;
+
+    if (voiceAppendMode) {
+      const appended = transcript;
+      setNotes((prev) => prev.map((n) => (n.id === activeNoteId ? { ...n, text: (n.text ? n.text + " " : "") + appended } : n)));
+      setOverlayOpen(false);
+      setIsRecording(false);
+      setTranscript("");
+      setAttachedPhoto(false);
+      setVoiceAppendMode(false);
+      playMoodTune();
+      return;
+    }
 
     if (typeTimer.current) clearInterval(typeTimer.current);
     const tempId = Date.now();
@@ -477,6 +537,7 @@ export default function SynapseApp() {
     setIsRecording(false);
     setTranscript("");
     setAttachedPhoto(false);
+    playMoodTune();
 
     // Clear the "organizing" shimmer on a fixed timer — this is a UI
     // animation, so it must not depend on Gemini or the DB save (either of
@@ -670,7 +731,6 @@ export default function SynapseApp() {
     setScreen("note");
     setActiveNoteId(entryId);
     setNoteOrigin("journal");
-    playMoodTune();
   };
   const journalPickEntry = (note: Note) => {
     const pos = journalPendingPos;
