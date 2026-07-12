@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import PaperDecor from "./PaperDecor";
 import { PAPER_BG, PAPER_BG_SIZE } from "@/lib/data";
 
@@ -24,8 +25,21 @@ export default function CaptureOverlay({
   onToggleAttachPhoto: () => void;
   onSave: () => void;
 }) {
+  const [dotCount, setDotCount] = useState(1);
+
+  useEffect(() => {
+    if (!isProcessing) {
+      setDotCount(1);
+      return;
+    }
+    const interval = setInterval(() => {
+      setDotCount((d) => (d % 3) + 1);
+    }, 450);
+    return () => clearInterval(interval);
+  }, [isProcessing]);
+
   const statusLabel = isProcessing
-    ? "organizing your thoughts…"
+    ? `organizing your thoughts${".".repeat(dotCount)}`
     : isRecording
     ? "listening…"
     : transcript
@@ -131,26 +145,35 @@ export default function CaptureOverlay({
         >
           <div
             style={{
+              position: "relative",
               width: 126,
               height: 126,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: isProcessing
-                ? "oklch(0.78 0.015 70)"
-                : "linear-gradient(155deg, oklch(0.74 0.15 45), oklch(0.63 0.17 28))",
-
+              background: "linear-gradient(155deg, oklch(0.74 0.15 45), oklch(0.63 0.17 28))",
               boxShadow: isProcessing
                 ? "0 8px 20px rgba(0,0,0,0.08)"
                 : "0 14px 34px oklch(0.6 0.16 35 / 0.5), 0 3px 10px rgba(0,0,0,0.15)",
-
-              animation: isProcessing
-                ? "none"
-                : `blobMorph ${isRecording ? "2.4s" : "7s"} ease-in-out infinite, blobPulse ${
-                    isRecording ? "1s" : "3.6s"
-                  } ease-in-out infinite`,
+              transition: "box-shadow 0.4s ease",
+              animation: `blobMorph ${isRecording ? "2.4s" : "7s"} ease-in-out infinite, blobPulse ${
+                isRecording ? "1s" : "3.6s"
+              } ease-in-out infinite`,
+              animationPlayState: isProcessing ? "paused" : "running",
             }}
           >
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "inherit",
+                background: "oklch(0.78 0.015 70)",
+                opacity: isProcessing ? 1 : 0,
+                transition: "opacity 0.4s ease",
+                pointerEvents: "none",
+              }}
+            />
+            <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {isProcessing ? (
               <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
                 <rect
@@ -193,6 +216,7 @@ export default function CaptureOverlay({
                 <line x1="12" y1="18" x2="12" y2="22" stroke="oklch(0.99 0.005 80)" strokeWidth="2" strokeLinecap="round" />
               </svg>
             )}
+            </div>
           </div>
         </button>
 

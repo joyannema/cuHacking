@@ -6,6 +6,7 @@
 // Next.js loads these automatically - no dotenv needed here.
 
 import { NextRequest, NextResponse } from "next/server";
+import { isMood, MOODS } from "@/lib/moods";
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -53,6 +54,7 @@ Your job is to:
 4. Generate 2-5 short relevant tags (lowercase, no # symbols).
 5. Extract any useful structured information such as people, places, dates, times, money, organizations, or tasks.
 6. Determine if this note describes an action the person needs to do (a task/reminder like "call mom" or "submit the report") versus just a thought or observation with nothing actionable.
+7. Pick the single mood that best matches the emotional tone of this note, from exactly this list: ${MOODS.join(", ")}.
 
 Return ONLY valid JSON in exactly this format:
 
@@ -62,6 +64,7 @@ Return ONLY valid JSON in exactly this format:
   "details": "string",
   "tags": ["tag1", "tag2"],
   "is_todo": true or false,
+  "mood": "string (one of: ${MOODS.join(", ")})",
   "extracted_fields": {
     "person": null,
     "place": null,
@@ -111,6 +114,7 @@ export async function POST(req: NextRequest) {
 
     const transcript = await transcribeAudio(audioFile, audioFile.name || "recording.webm");
     const classified = await classifyTranscript(transcript, existingCategories);
+    if (!isMood(classified.mood)) classified.mood = "neutral";
 
     console.log("Gemini response:", classified);
 

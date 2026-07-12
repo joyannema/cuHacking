@@ -1,3 +1,5 @@
+import type { Mood } from "./moods";
+
 export type Screen =
   | "signin"
   | "stream"
@@ -29,6 +31,7 @@ export interface Note {
   title?: string;
   _titleSeed?: number;
   photo?: boolean;
+  mood?: Mood;
   isTodo?: boolean;
   todoText?: string;
   todoDone?: boolean;
