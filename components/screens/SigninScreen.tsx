@@ -74,21 +74,7 @@ export default function SigninScreen({ onSignIn }: { onSignIn: (user: AuthUser) 
     >
       <Image src="/logo.png" alt="synapse" width={440} height={293} priority style={{ width: 440, height: "auto" }} />
 
-      <p
-        style={{
-          fontFamily: "'IBM Plex Mono',monospace",
-          fontSize: 11.5,
-          color: "oklch(0.55 0.02 60)",
-          textAlign: "center",
-          lineHeight: 1.6,
-          margin: "4px 0 32px",
-          maxWidth: 260,
-        }}
-      >
-        sign in to start filing your thoughts.
-      </p>
-
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 320 }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 320, marginTop: 20 }}>
         <input
           type="text"
           placeholder="username"

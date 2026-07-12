@@ -154,7 +154,7 @@ export default function TabBar({
             alignItems: "center",
             gap: 10,
             transform: "rotate(-2.5deg)",
-            background: "repeating-linear-gradient(45deg, oklch(0.88 0.05 210 / 0.85) 0 4px, oklch(0.94 0.03 210 / 0.7) 4px 8px)",
+            background: "repeating-linear-gradient(45deg, oklch(0.88 0.05 19 / 0.85) 0 4px, oklch(0.94 0.03 19 / 0.7) 4px 8px)",
             borderRadius: 3,
             padding: "10px 16px 9px",
             boxShadow: "0 2px 6px rgba(0,0,0,0.12)",

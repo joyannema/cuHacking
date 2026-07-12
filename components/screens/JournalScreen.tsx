@@ -1,6 +1,6 @@
 "use client";
 
-import type { PointerEvent as ReactPointerEvent } from "react";
+import { useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   CATEGORY_LABELS,
   CATEGORY_PALETTE,
@@ -70,6 +70,8 @@ export default function JournalScreen({
   setCanvasRef: (el: HTMLDivElement | null) => void;
   setFileInputRef: (el: HTMLInputElement | null) => void;
 }) {
+  const [decorationsMenuOpen, setDecorationsMenuOpen] = useState(false);
+
   const atCover = pageIndex < 0;
   const pageIdx = Math.max(pageIndex, 0);
   const onRightPage = pageIdx % 2 === 1;
@@ -190,6 +192,7 @@ export default function JournalScreen({
           <>
             {el.type === "note" && el.entryId != null && (
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   onViewElement(el.entryId as number);
@@ -203,6 +206,7 @@ export default function JournalScreen({
               </button>
             )}
             <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onDeleteElement(el.id);
@@ -410,9 +414,56 @@ export default function JournalScreen({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "2px 32px 12px" }}>
-            {STICKER_DEFS.map((sd) => (
-              <div key={sd.kind} style={toolBtnStyle} onPointerDown={(e) => onTrayStickerDown(sd.kind, e)} dangerouslySetInnerHTML={sd.svg} />
-            ))}
+            <div style={{ position: "relative" }}>
+              {decorationsMenuOpen && (
+                <>
+                  <div
+                    onClick={() => setDecorationsMenuOpen(false)}
+                    style={{ position: "fixed", inset: 0, zIndex: 20 }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "calc(100% + 10px)",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      display: "flex",
+                      gap: 8,
+                      background: "oklch(0.98 0.01 80)",
+                      border: "1.4px solid oklch(0.82 0.015 70)",
+                      borderRadius: 18,
+                      padding: 8,
+                      boxShadow: "0 4px 14px rgba(0,0,0,0.16)",
+                      zIndex: 21,
+                    }}
+                  >
+                    {STICKER_DEFS.map((sd) => (
+                      <div
+                        key={sd.kind}
+                        style={toolBtnStyle}
+                        onPointerDown={(e) => {
+                          onTrayStickerDown(sd.kind, e);
+                          setDecorationsMenuOpen(false);
+                        }}
+                        dangerouslySetInnerHTML={sd.svg}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+              <div
+                style={{ ...toolBtnStyle, cursor: "pointer" }}
+                onClick={() => setDecorationsMenuOpen((prev) => !prev)}
+                role="button"
+                aria-label="decorations"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 13c2.2-4.5 6.4-4.5 8.5 0s6.3 4.5 8.5 0" stroke="oklch(0.35 0.02 55)" strokeWidth="1.8" strokeLinecap="round" />
+                  <circle cx="18.5" cy="6" r="2" fill="oklch(0.35 0.02 55)" />
+                </svg>
+              </div>
+            </div>
+
             <div style={toolBtnStyle} onPointerDown={onTrayTextDown}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M5 6h14M12 6v13" stroke="oklch(0.35 0.02 55)" strokeWidth="1.8" strokeLinecap="round" />
