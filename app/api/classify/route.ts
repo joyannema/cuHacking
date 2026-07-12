@@ -49,9 +49,10 @@ Transcript:
 Your job is to:
 1. Choose the best category for this note. Reuse an existing category whenever possible.
 2. Generate a natural, human-readable title (3-8 words). Do NOT simply copy the first few words of the transcript.
-3. Rewrite the transcript into a clean, grammatically correct note while preserving the original meaning.
+3. Lightly clean up the transcript (fix filler words, obvious typos, run-on sentences) but keep it as close to the original wording as possible. Do NOT add details, dates, or specifics that weren't actually said. Do NOT paraphrase into different words if the original phrasing already makes sense.
 4. Generate 2-5 short relevant tags (lowercase, no # symbols).
 5. Extract any useful structured information such as people, places, dates, times, money, organizations, or tasks.
+6. Determine if this note describes an action the person needs to do (a task/reminder like "call mom" or "submit the report") versus just a thought or observation with nothing actionable.
 
 Return ONLY valid JSON in exactly this format:
 
@@ -60,6 +61,7 @@ Return ONLY valid JSON in exactly this format:
   "title": "string",
   "details": "string",
   "tags": ["tag1", "tag2"],
+  "is_todo": true or false,
   "extracted_fields": {
     "person": null,
     "place": null,

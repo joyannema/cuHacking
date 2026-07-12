@@ -338,6 +338,8 @@ export default function SynapseApp() {
       time: "now",
       colorIdx: 0,
       organizing: true,
+      isTodo: classifiedNote?.is_todo === true,
+      todoText: classifiedNote?.title ?? transcript,
     };
     setOverlayOpen(false);
     setIsRecording(false);
