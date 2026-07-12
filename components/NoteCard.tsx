@@ -1,4 +1,4 @@
-// import type { CSSProperties } from "react"; — only needed by the disabled hover-lift styling
+import type { CSSProperties } from "react";
 import { CATEGORY_LABELS, CATEGORY_PALETTE, CLIP_PRESETS, colorIdxForCategory, generateTitle, seededRand } from "@/lib/data";
 import type { Note } from "@/lib/types";
 
@@ -24,7 +24,7 @@ export default function NoteCard({
   return (
     <div
       onClick={onClick}
-      // className="hover-lift" — disabled for now, was causing lag
+      className="hover-lift"
       style={{
         position: "relative",
         breakInside: "avoid",
@@ -36,10 +36,10 @@ export default function NoteCard({
         clipPath: clip,
         padding: "14px 14px 12px",
         boxShadow: "0 4px 11px rgba(90,60,30,0.1)",
-        transform: `rotate(${rot}deg)`,
         animation: "slideUpFade 0.4s ease-out",
         cursor: "pointer",
-      }}
+        ["--rot" as string]: `${rot}deg`,
+      } as CSSProperties}
     >
       <div
         style={{

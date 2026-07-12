@@ -18,6 +18,25 @@ import CaptureOverlay from "./CaptureOverlay";
 
 const CATEGORY_SLUGS = Object.keys(CATEGORY_LABELS) as CategorySlug[];
 const TAB_SCREENS = new Set<Screen>(["stream", "todos", "journal", "settings"]);
+
+const JOURNAL_STORAGE_KEY = "epiphany:journal";
+
+interface StoredJournalState {
+  pageIndex: number;
+  pages: JournalPage[];
+  title: string;
+  coverColorIdx: number;
+}
+
+function loadJournalState(): StoredJournalState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(JOURNAL_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as StoredJournalState) : null;
+  } catch {
+    return null;
+  }
+}
 const MOOD_FADE_IN_MS = 2000;
 const MOOD_FADE_OUT_MS = 2000;
 const RECENT_MOOD_SAMPLE_SIZE = 5;
@@ -71,6 +90,7 @@ interface JournalDragSession {
 interface TrayDragSession {
   kind: "sticker" | "text" | "photo" | "entry";
   stickerKind?: string;
+  entryId?: number;
 }
 
 export default function SynapseApp() {
@@ -98,13 +118,14 @@ export default function SynapseApp() {
   const [todosEditMode, setTodosEditMode] = useState(false);
   const [selectedTodoIds, setSelectedTodoIds] = useState<number[]>([]);
 
-  const [journalPageIndex, setJournalPageIndex] = useState(-1);
-  const [journalPages, setJournalPages] = useState<JournalPage[]>([{ elements: [] }, { elements: [] }]);
+  const [journalPageIndex, setJournalPageIndex] = useState(() => loadJournalState()?.pageIndex ?? -1);
+  const [journalPages, setJournalPages] = useState<JournalPage[]>(() => loadJournalState()?.pages ?? [{ elements: [] }, { elements: [] }]);
   const [journalEntriesOpen, setJournalEntriesOpen] = useState(false);
   const [journalSelectedId, setJournalSelectedId] = useState<number | null>(null);
-  const [journalDragGhost, setJournalDragGhost] = useState<{ x: number; y: number; kind: string; stickerKind?: string } | null>(null);
+  const [journalDragGhost, setJournalDragGhost] = useState<{ x: number; y: number; kind: string; stickerKind?: string; entryId?: number } | null>(null);
   const [journalPendingPos, setJournalPendingPos] = useState<{ pageIdx: number; x: number; y: number } | null>(null);
-  const [journalTitle, setJournalTitle] = useState("my bullet journal");
+  const [journalTitle, setJournalTitle] = useState(() => loadJournalState()?.title ?? "my bullet journal");
+  const [journalCoverColorIdx, setJournalCoverColorIdx] = useState(() => loadJournalState()?.coverColorIdx ?? 0);
 
   const typeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -162,9 +183,8 @@ export default function SynapseApp() {
     } else if (drag.kind === "photo") {
       setJournalPendingPos({ pageIdx, x: localX - 70, y: localY - 70 });
       journalFileInputElRef.current?.click();
-    } else if (drag.kind === "entry") {
-      setJournalPendingPos({ pageIdx, x: localX - 75, y: localY - 54 });
-      setJournalEntriesOpen(true);
+    } else if (drag.kind === "entry" && drag.entryId != null) {
+      addJournalElement(pageIdx, { type: "note", entryId: drag.entryId, x: localX - 75, y: localY - 54, w: 150, h: 108 });
     }
   };
 
@@ -222,6 +242,14 @@ export default function SynapseApp() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const state: StoredJournalState = { pageIndex: journalPageIndex, pages: journalPages, title: journalTitle, coverColorIdx: journalCoverColorIdx };
+      window.localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(state));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [journalPageIndex, journalPages, journalTitle, journalCoverColorIdx]);
 
   const ensureSharedTune = (mood: Mood) => {
     if (sharedTuneUrlRef.current) return Promise.resolve(sharedTuneUrlRef.current);
@@ -664,9 +692,10 @@ export default function SynapseApp() {
   const trayPhotoDown = () => {
     trayDragRef.current = { kind: "photo" };
   };
-  const trayEntryDown = () => {
-    trayDragRef.current = { kind: "entry" };
+  const trayEntryDown = (note: Note) => {
+    trayDragRef.current = { kind: "entry", entryId: note.id };
   };
+  const journalOpenEntries = () => setJournalEntriesOpen(true);
 
   const journalPointerDown = (pageIdx: number, elId: number, mode: "move" | "resize" | "rotate", e: ReactPointerEvent) => {
     e.stopPropagation();
@@ -706,12 +735,6 @@ export default function SynapseApp() {
     setScreen("note");
     setActiveNoteId(entryId);
     setNoteOrigin("journal");
-  };
-  const journalPickEntry = (note: Note) => {
-    const pos = journalPendingPos;
-    const pageIdx = pos ? pos.pageIdx : Math.max(journalPageIndex, 0);
-    addJournalElement(pageIdx, { type: "note", entryId: note.id, w: 150, h: 108, ...(pos ? { x: pos.x, y: pos.y } : {}) });
-    setJournalPendingPos(null);
   };
   const journalAddPhotoFile = (file: File) => {
     const reader = new FileReader();
@@ -854,6 +877,8 @@ export default function SynapseApp() {
           notes={notes}
           journalTitle={journalTitle}
           onJournalTitleBlur={onJournalTitleBlur}
+          coverColorIdx={journalCoverColorIdx}
+          onCoverColorChange={setJournalCoverColorIdx}
           pageIndex={journalPageIndex}
           pages={journalPages}
           selectedId={journalSelectedId}
@@ -865,7 +890,7 @@ export default function SynapseApp() {
           onNextPage={journalNextPage}
           onAddPage={journalAddPage}
           onCloseSheets={journalCloseSheets}
-          onPickEntry={journalPickEntry}
+          onOpenEntries={journalOpenEntries}
           onElementPointerDown={journalPointerDown}
           onViewElement={viewJournalElement}
           onDeleteElement={deleteJournalElement}

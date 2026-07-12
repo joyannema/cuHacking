@@ -7,7 +7,6 @@ import {
   colorIdxForCategory,
   JOURNAL_CANVAS_H,
   JOURNAL_CANVAS_W,
-  JOURNAL_SLIVER_W,
   PAPER_BG,
   PAPER_BG_SIZE,
   STICKER_DEFS,
@@ -20,6 +19,8 @@ export default function JournalScreen({
   notes,
   journalTitle,
   onJournalTitleBlur,
+  coverColorIdx,
+  onCoverColorChange,
   pageIndex,
   pages,
   selectedId,
@@ -31,7 +32,7 @@ export default function JournalScreen({
   onNextPage,
   onAddPage,
   onCloseSheets,
-  onPickEntry,
+  onOpenEntries,
   onElementPointerDown,
   onViewElement,
   onDeleteElement,
@@ -47,18 +48,20 @@ export default function JournalScreen({
   notes: Note[];
   journalTitle: string;
   onJournalTitleBlur: (text: string) => void;
+  coverColorIdx: number;
+  onCoverColorChange: (idx: number) => void;
   pageIndex: number;
   pages: JournalPage[];
   selectedId: number | null;
   entriesOpen: boolean;
-  dragGhost: { x: number; y: number; kind: string; stickerKind?: string } | null;
+  dragGhost: { x: number; y: number; kind: string; stickerKind?: string; entryId?: number } | null;
   onOpenBook: () => void;
   onGoCover: () => void;
   onPrevPage: () => void;
   onNextPage: () => void;
   onAddPage: () => void;
   onCloseSheets: () => void;
-  onPickEntry: (note: Note) => void;
+  onOpenEntries: () => void;
   onElementPointerDown: (pageIdx: number, elId: number, mode: "move" | "resize" | "rotate", e: ReactPointerEvent) => void;
   onViewElement: (entryId: number) => void;
   onDeleteElement: (id: number) => void;
@@ -66,7 +69,7 @@ export default function JournalScreen({
   onTrayStickerDown: (kind: string, e: ReactPointerEvent) => void;
   onTrayTextDown: (e: ReactPointerEvent) => void;
   onTrayPhotoDown: (e: ReactPointerEvent) => void;
-  onTrayEntryDown: (e: ReactPointerEvent) => void;
+  onTrayEntryDown: (note: Note, e: ReactPointerEvent) => void;
   onAddPhotoFile: (file: File) => void;
   setCanvasRef: (el: HTMLDivElement | null) => void;
   setFileInputRef: (el: HTMLInputElement | null) => void;
@@ -78,6 +81,10 @@ export default function JournalScreen({
   const onRightPage = pageIdx % 2 === 1;
   const neighborIdx = onRightPage ? pageIdx - 1 : pageIdx + 1;
   const hasNeighbor = neighborIdx >= 0 && neighborIdx < pages.length;
+  const leftIdx = onRightPage ? neighborIdx : pageIdx;
+  const rightIdx = onRightPage ? pageIdx : neighborIdx;
+  const hasLeftPage = onRightPage ? hasNeighbor : true;
+  const hasRightPage = onRightPage ? true : hasNeighbor;
 
   const buildElements = (idx: number) => {
     const page = pages[idx] || { elements: [] };
@@ -93,10 +100,12 @@ export default function JournalScreen({
   const renderElement = (
     entry: { el: JournalElement; noteSrc: Note | null | undefined; notePal: { bg: string; fg: string } | null; hue: number },
     idx: number,
-    interactive: boolean
+    interactive: boolean,
+    xOffset = 0
   ) => {
     const { el, noteSrc, notePal, hue } = entry;
     const selected = interactive && selectedId === el.id;
+    const textFontSize = Math.max(10, Math.round(el.h * 0.32));
 
     return (
       <div
@@ -104,7 +113,7 @@ export default function JournalScreen({
         onPointerDown={interactive ? (e) => onElementPointerDown(pageIdx, el.id, "move", e) : undefined}
         style={{
           position: "absolute",
-          left: el.x,
+          left: el.x + xOffset,
           top: el.y,
           width: el.w,
           height: el.h,
@@ -171,7 +180,7 @@ export default function JournalScreen({
               height: "100%",
               boxSizing: "border-box",
               fontFamily: "'Caveat',cursive",
-              fontSize: 19,
+              fontSize: textFontSize,
               color: "oklch(0.35 0.05 45)",
               background: "transparent",
               outline: "none",
@@ -258,12 +267,14 @@ export default function JournalScreen({
       }}
     >
       {atCover ? (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 80px" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           <div
             style={{
               position: "relative",
-              width: "100%",
-              background: "oklch(0.97 0.02 85)",
+              width: JOURNAL_CANVAS_W,
+              height: JOURNAL_CANVAS_H,
+              boxSizing: "border-box",
+              background: CATEGORY_PALETTE[coverColorIdx % CATEGORY_PALETTE.length].bg,
               borderRadius: 4,
               padding: "46px 26px",
               boxShadow: "2px 4px 14px rgba(90,60,30,0.16)",
@@ -305,9 +316,28 @@ export default function JournalScreen({
               a scrapbook of your notes
             </span>
           </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 18 }}>
+            {CATEGORY_PALETTE.map((swatch, i) => (
+              <button
+                key={i}
+                onClick={() => onCoverColorChange(i)}
+                aria-label={`cover color ${i + 1}`}
+                className="nav-btn"
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  border: i === coverColorIdx ? "2px solid oklch(0.3 0.02 55)" : "1.5px solid oklch(0.8 0.02 65)",
+                  background: swatch.bg,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              />
+            ))}
+          </div>
           <button
             onClick={onOpenBook}
-            style={{ marginTop: 26, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 14, color: "oklch(0.99 0.005 80)", background: "oklch(0.3 0.02 55)", border: "none", borderRadius: 24, padding: "12px 28px", cursor: "pointer" }}
+            style={{ marginTop: 18, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 14, color: "oklch(0.99 0.005 80)", background: "oklch(0.3 0.02 55)", border: "none", borderRadius: 24, padding: "12px 28px", cursor: "pointer" }}
           >
             open journal
           </button>
@@ -324,79 +354,77 @@ export default function JournalScreen({
               </svg>
             </button>
             <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10.5, color: "oklch(0.5 0.03 60)" }}>
-              page {pageIdx + 1} of {pages.length}
+              {hasLeftPage && hasRightPage
+                ? `pages ${leftIdx + 1}–${rightIdx + 1} of ${pages.length}`
+                : `page ${pageIdx + 1} of ${pages.length}`}
             </span>
             <div style={{ width: 36 }} />
           </div>
 
           <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", padding: "4px 0" }}>
-            <div
-              ref={setCanvasRef}
-              style={{
-                position: "relative",
-                width: JOURNAL_CANVAS_W,
-                height: JOURNAL_CANVAS_H,
-                backgroundColor: "oklch(0.985 0.01 82)",
-                backgroundImage: "radial-gradient(rgba(90,70,50,0.22) 1px, transparent 1.4px)",
-                backgroundSize: "15px 15px",
-                borderRadius: 3,
-                boxShadow: "0 3px 14px rgba(90,60,30,0.14)",
-                overflow: "visible",
-                flexShrink: 0,
-                zIndex: 2,
-              }}
-            >
-              {buildElements(pageIdx).map((entry, i) => renderElement(entry, i, true))}
-            </div>
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              {/* page backgrounds only — content renders in the unified overlay below so
+                  elements that overlap the spine aren't clipped by the neighboring page */}
+              <div
+                ref={hasLeftPage && !onRightPage ? setCanvasRef : undefined}
+                style={{
+                  position: "relative",
+                  width: JOURNAL_CANVAS_W,
+                  height: JOURNAL_CANVAS_H,
+                  backgroundColor: "oklch(0.985 0.01 82)",
+                  backgroundImage: hasLeftPage ? "radial-gradient(rgba(90,70,50,0.22) 1px, transparent 1.4px)" : undefined,
+                  backgroundSize: "15px 15px",
+                  borderRadius: "3px 0 0 3px",
+                  boxShadow: "0 3px 14px rgba(90,60,30,0.14)",
+                  opacity: hasLeftPage ? 1 : 0.35,
+                  flexShrink: 0,
+                  zIndex: 1,
+                }}
+              />
 
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                ...(onRightPage
-                  ? { right: `calc(50% + ${JOURNAL_CANVAS_W / 2}px)` }
-                  : { left: `calc(50% + ${JOURNAL_CANVAS_W / 2}px)` }),
-                transform: "translateY(-50%)",
-                width: 2,
-                height: JOURNAL_CANVAS_H,
-                background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.22), transparent)",
-              }}
-            />
+              <div
+                style={{
+                  width: 2,
+                  height: JOURNAL_CANVAS_H,
+                  flexShrink: 0,
+                  background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.22), transparent)",
+                  zIndex: 2,
+                }}
+              />
 
-            {hasNeighbor && (
+              <div
+                ref={hasRightPage && onRightPage ? setCanvasRef : undefined}
+                style={{
+                  position: "relative",
+                  width: JOURNAL_CANVAS_W,
+                  height: JOURNAL_CANVAS_H,
+                  backgroundColor: "oklch(0.985 0.01 82)",
+                  backgroundImage: hasRightPage ? "radial-gradient(rgba(90,70,50,0.22) 1px, transparent 1.4px)" : undefined,
+                  backgroundSize: "15px 15px",
+                  borderRadius: "0 3px 3px 0",
+                  boxShadow: "0 3px 14px rgba(90,60,30,0.14)",
+                  opacity: hasRightPage ? 1 : 0.35,
+                  flexShrink: 0,
+                  zIndex: 1,
+                }}
+              />
+
               <div
                 style={{
                   position: "absolute",
-                  top: "50%",
-                  ...(onRightPage
-                    ? { right: `calc(50% + ${JOURNAL_CANVAS_W / 2 + 2}px)` }
-                    : { left: `calc(50% + ${JOURNAL_CANVAS_W / 2 + 2}px)` }),
-                  transform: "translateY(-50%)",
-                  width: JOURNAL_SLIVER_W,
+                  top: 0,
+                  left: 0,
+                  width: JOURNAL_CANVAS_W * 2 + 2,
                   height: JOURNAL_CANVAS_H,
-                  overflow: "hidden",
-                  background: "oklch(0.985 0.01 82)",
-                  boxShadow: onRightPage ? "-2px 0 4px rgba(90,60,30,0.1)" : "2px 0 4px rgba(90,60,30,0.1)",
+                  overflow: "visible",
+                  pointerEvents: "none",
+                  zIndex: 3,
                 }}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    width: JOURNAL_CANVAS_W,
-                    height: JOURNAL_CANVAS_H,
-                    opacity: 0.5,
-                    pointerEvents: "none",
-                    backgroundColor: "oklch(0.985 0.01 82)",
-                    backgroundImage: "radial-gradient(rgba(90,70,50,0.22) 1px, transparent 1.4px)",
-                    backgroundSize: "15px 15px",
-                    ...(onRightPage ? { right: 0 } : { left: 0 }),
-                  }}
-                >
-                  {buildElements(neighborIdx).map((entry, i) => renderElement(entry, i, false))}
-                </div>
+                {hasLeftPage && buildElements(leftIdx).map((entry, i) => renderElement(entry, i, !onRightPage))}
+                {hasRightPage && buildElements(rightIdx).map((entry, i) => renderElement(entry, i, onRightPage, JOURNAL_CANVAS_W + 2))}
               </div>
-            )}
+            </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, padding: "8px 40px 6px" }}>
@@ -477,12 +505,74 @@ export default function JournalScreen({
                 <circle cx="12" cy="13" r="3.4" stroke="oklch(0.35 0.02 55)" strokeWidth="1.7" />
               </svg>
             </div>
-            <div style={toolBtnStyle} onPointerDown={onTrayEntryDown}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <rect x="4" y="3" width="16" height="18" rx="2" stroke="oklch(0.35 0.02 55)" strokeWidth="1.7" />
-                <line x1="8" y1="8" x2="16" y2="8" stroke="oklch(0.35 0.02 55)" strokeWidth="1.4" />
-                <line x1="8" y1="12" x2="16" y2="12" stroke="oklch(0.35 0.02 55)" strokeWidth="1.4" />
-              </svg>
+            <div style={{ position: "relative" }}>
+              {entriesOpen && (
+                <>
+                  <div
+                    onClick={onCloseSheets}
+                    style={{ position: "fixed", inset: 0, zIndex: 20 }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "calc(100% + 10px)",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                      width: 220,
+                      maxHeight: 240,
+                      overflowY: "auto",
+                      background: "oklch(0.98 0.01 80)",
+                      border: "1.4px solid oklch(0.82 0.015 70)",
+                      borderRadius: 14,
+                      padding: 8,
+                      boxShadow: "0 4px 14px rgba(0,0,0,0.16)",
+                      zIndex: 21,
+                    }}
+                  >
+                    {notes.length === 0 && (
+                      <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10.5, color: "oklch(0.55 0.02 60)", padding: "8px 6px" }}>
+                        no notes yet
+                      </span>
+                    )}
+                    {notes.slice(0, 30).map((n) => (
+                      <div
+                        key={n.id}
+                        onPointerDown={(e) => {
+                          onTrayEntryDown(n, e);
+                          onCloseSheets();
+                        }}
+                        style={{
+                          textAlign: "left",
+                          borderRadius: 10,
+                          padding: "9px 12px",
+                          cursor: "grab",
+                          fontFamily: "'IBM Plex Mono',monospace",
+                          fontSize: 11.5,
+                          color: "oklch(0.35 0.02 55)",
+                          background: "oklch(0.97 0.01 80)",
+                        }}
+                      >
+                        {n.text.length > 46 ? n.text.slice(0, 46) + "…" : n.text}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              <div
+                style={{ ...toolBtnStyle, cursor: "pointer" }}
+                onClick={onOpenEntries}
+                role="button"
+                aria-label="add a note"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="4" y="3" width="16" height="18" rx="2" stroke="oklch(0.35 0.02 55)" strokeWidth="1.7" />
+                  <line x1="8" y1="8" x2="16" y2="8" stroke="oklch(0.35 0.02 55)" strokeWidth="1.4" />
+                  <line x1="8" y1="12" x2="16" y2="12" stroke="oklch(0.35 0.02 55)" strokeWidth="1.4" />
+                </svg>
+              </div>
             </div>
             <input type="file" accept="image/*" ref={setFileInputRef} onChange={(e) => {
               const file = e.target.files && e.target.files[0];
@@ -504,28 +594,6 @@ export default function JournalScreen({
                   : { __html: '<div style="width:36px;height:36px;border-radius:8px;background:oklch(0.68 0.14 45 / 0.5);"></div>' }
               }
             />
-          )}
-
-          {entriesOpen && (
-            <div
-              onClick={onCloseSheets}
-              style={{ position: "absolute", inset: 0, background: "rgba(40,30,20,0.28)", display: "flex", alignItems: "flex-end", zIndex: 20 }}
-            >
-              <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", boxSizing: "border-box", background: "oklch(0.97 0.015 80)", borderRadius: "18px 18px 0 0", padding: "16px 18px 26px" }}>
-                <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 13, color: "oklch(0.3 0.02 55)" }}>add a note</span>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10, maxHeight: 220, overflowY: "auto" }}>
-                  {notes.slice(0, 20).map((n) => (
-                    <button
-                      key={n.id}
-                      onClick={() => onPickEntry(n)}
-                      style={{ textAlign: "left", border: "none", background: "oklch(0.97 0.01 80)", borderRadius: 10, padding: "9px 12px", cursor: "pointer", fontFamily: "'IBM Plex Mono',monospace", fontSize: 11.5, color: "oklch(0.35 0.02 55)" }}
-                    >
-                      {n.text.length > 46 ? n.text.slice(0, 46) + "…" : n.text}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
           )}
         </>
       )}

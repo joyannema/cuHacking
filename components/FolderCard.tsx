@@ -1,4 +1,4 @@
-// import type { CSSProperties } from "react"; — only needed by the disabled hover-lift styling
+import type { CSSProperties } from "react";
 import { CATEGORY_PALETTE, CLIP_PRESETS, seededRand } from "@/lib/data";
 import type { CategoryMeta } from "@/lib/types";
 import FolderIcon from "./FolderIcon";
@@ -24,7 +24,7 @@ export default function FolderCard({
   return (
     <button
       onClick={onClick}
-      // className="hover-lift" — disabled for now, was causing lag
+      className="hover-lift"
       style={{
         position: "relative",
         width: mini ? "calc(50% - 6px)" : "calc(50% - 8px)",
@@ -37,10 +37,10 @@ export default function FolderCard({
         clipPath: clip,
         padding: mini ? "18px 10px 16px" : "16px 16px 14px",
         boxShadow: mini ? "0 3px 9px rgba(90,60,30,0.09)" : "0 4px 11px rgba(90,60,30,0.1)",
-        transform: `rotate(${rot}deg)`,
         cursor: "pointer",
         textAlign: mini ? "center" : "left",
-      }}
+        ["--rot" as string]: `${rot}deg`,
+      } as CSSProperties}
     >
       <div
         style={{

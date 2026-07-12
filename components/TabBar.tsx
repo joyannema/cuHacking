@@ -31,6 +31,7 @@ export default function TabBar({
     return (
       <button
         onClick={onClick}
+        className="nav-btn"
         style={{
           width: 46,
           height: 46,
@@ -82,6 +83,7 @@ export default function TabBar({
 
         <button
           onClick={onCapture}
+          className="nav-btn"
           style={{
             width: 78,
             height: 78,
@@ -163,6 +165,7 @@ export default function TabBar({
           <button
             onClick={onToggleMute}
             aria-label={muted ? "Unmute" : "Mute"}
+            className="nav-btn"
             style={{
               width: 32,
               height: 32,
