@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import PaperDecor from "../PaperDecor";
 import { PAPER_BG, PAPER_BG_SIZE } from "@/lib/data";
@@ -93,12 +94,8 @@ export default function SigninScreen({ onSignIn }: { onSignIn: (user: AuthUser) 
         />
       </svg>
 
-      <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 34, color: "oklch(0.24 0.02 55)", letterSpacing: "-0.03em" }}>
-        synapse
-      </span>
-      <p style={{ fontFamily: "'Caveat',cursive", fontSize: 21, color: "oklch(0.5 0.05 45)", margin: "6px 0 0" }}>
-        it just listens, and organizes
-      </p>
+      <Image src="/logo.png" alt="synapse" width={440} height={293} priority style={{ width: 440, height: "auto" }} />
+
       <p
         style={{
           fontFamily: "'IBM Plex Mono',monospace",
@@ -106,7 +103,7 @@ export default function SigninScreen({ onSignIn }: { onSignIn: (user: AuthUser) 
           color: "oklch(0.55 0.02 60)",
           textAlign: "center",
           lineHeight: 1.6,
-          margin: "26px 0 32px",
+          margin: "4px 0 32px",
           maxWidth: 260,
         }}
       >

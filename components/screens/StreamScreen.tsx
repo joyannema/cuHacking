@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 import PaperDecor from "../PaperDecor";
 import NoteCard from "../NoteCard";
@@ -63,11 +64,15 @@ export default function StreamScreen({
           paddingBottom: 130,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(28px, env(safe-area-inset-top)) 20px 2px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(28px, env(safe-area-inset-top)) 20px 12px" }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 22, color: "oklch(0.24 0.02 55)", letterSpacing: "-0.02em" }}>
-              synapse
-            </span>
+            <Image
+              src="/logo_noslogan.png"
+              alt="synapse"
+              width={300}
+              height={72}
+              style={{ width: 300, height: "auto", marginBottom: 12 }}
+            />
             <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "oklch(0.5 0.03 60)" }}>
               hey — what&apos;s on your mind?
             </span>
@@ -97,7 +102,7 @@ export default function StreamScreen({
         <svg style={{ position: "absolute", top: 68, right: 70, opacity: 0.5, zIndex: 1 }} width="20" height="20" viewBox="0 0 20 20">
           <path d="M10 0 L12 8 L20 10 L12 12 L10 20 L8 12 L0 10 L8 8 Z" fill="oklch(0.72 0.13 55)" />
         </svg>
-        <svg style={{ position: "absolute", top: 96, left: 22, opacity: 0.4, zIndex: 1 }} width="15" height="15" viewBox="0 0 15 15">
+        <svg style={{ position: "absolute", top: 150, left: 22, opacity: 0.4, zIndex: 1 }} width="15" height="15" viewBox="0 0 15 15">
           <circle cx="7.5" cy="7.5" r="6.2" stroke="oklch(0.5 0.1 300)" strokeWidth="1.4" fill="none" strokeDasharray="1.6 3" />
         </svg>
 
