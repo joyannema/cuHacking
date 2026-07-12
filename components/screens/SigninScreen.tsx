@@ -74,7 +74,7 @@ export default function SigninScreen({ onSignIn }: { onSignIn: (user: AuthUser) 
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/logo.svg" alt="synapse" width={320} height={70} style={{ width: 320, height: "auto" }} />
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 320, marginTop: 20 }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 320, marginTop: 10 }}>
         <input
           type="text"
           placeholder="username"
