@@ -5,7 +5,7 @@ export interface UserDoc {
   username: string;
   passwordHash: string;
   createdAt: Date;
-  insightText?: string;
+  insightTexts?: string[];
   insightGeneratedAt?: Date;
 }
 

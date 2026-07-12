@@ -6,7 +6,7 @@ export default function TodosScreen({
   todos,
   todosEditMode,
   selectedTodoIds,
-  insight,
+  insights,
   insightLoading,
   onGoStream,
   onToggleEditMode,
@@ -18,7 +18,7 @@ export default function TodosScreen({
   todos: Note[];
   todosEditMode: boolean;
   selectedTodoIds: number[];
-  insight: string | null;
+  insights: string[] | null;
   insightLoading: boolean;
   onGoStream: () => void;
   onToggleEditMode: () => void;
@@ -107,9 +107,20 @@ export default function TodosScreen({
               <div style={{ height: 14, width: "88%", borderRadius: 4, background: "oklch(0.85 0.02 65)", animation: "skeletonPulse 1.3s ease-in-out infinite" }} />
               <div style={{ height: 14, width: "58%", borderRadius: 4, background: "oklch(0.85 0.02 65)", animation: "skeletonPulse 1.3s ease-in-out infinite" }} />
             </div>
+          ) : insights && insights.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {insights.map((text, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                  <span style={{ flexShrink: 0, marginTop: 8, width: 5, height: 5, borderRadius: "50%", background: "oklch(0.6 0.1 45)" }} />
+                  <p style={{ margin: 0, fontFamily: "'Caveat',cursive", fontSize: 18, lineHeight: 1.35, color: "oklch(0.4 0.05 55)" }}>
+                    {text}
+                  </p>
+                </div>
+              ))}
+            </div>
           ) : (
             <p style={{ margin: 0, fontFamily: "'Caveat',cursive", fontSize: 19, lineHeight: 1.35, color: "oklch(0.4 0.05 55)" }}>
-              {insight || INSIGHT_FALLBACK_TEXT}
+              {INSIGHT_FALLBACK_TEXT}
             </p>
           )}
         </div>

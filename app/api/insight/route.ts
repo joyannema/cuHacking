@@ -24,18 +24,19 @@ export async function GET(req: Request) {
     }
 
     const isFresh =
-      user.insightText &&
+      user.insightTexts &&
+      user.insightTexts.length > 0 &&
       user.insightGeneratedAt &&
       Date.now() - new Date(user.insightGeneratedAt).getTime() < CACHE_TTL_MS;
 
     if (isFresh) {
-      return NextResponse.json({ insight: user.insightText, cached: true });
+      return NextResponse.json({ insights: user.insightTexts, cached: true });
     }
 
     const notes = await listNotesForUser(userObjectId, 50);
 
     if (notes.length < MIN_NOTES) {
-      return NextResponse.json({ insight: null, reason: "not_enough_notes" });
+      return NextResponse.json({ insights: null, reason: "not_enough_notes" });
     }
 
     try {
@@ -43,21 +44,25 @@ export async function GET(req: Request) {
         const tags = n.tags.length ? ` (tags: ${n.tags.join(", ")})` : "";
         return `${n.text}${tags}`;
       });
-      const insightText = await generateInsight(summaries);
+      const insightTexts = await generateInsight(summaries);
+
+      if (insightTexts.length === 0) {
+        return NextResponse.json({ insights: null, reason: "not_enough_notes" });
+      }
 
       await users.updateOne(
         { _id: userObjectId },
-        { $set: { insightText, insightGeneratedAt: new Date() } }
+        { $set: { insightTexts, insightGeneratedAt: new Date() } }
       );
 
-      return NextResponse.json({ insight: insightText, cached: false });
+      return NextResponse.json({ insights: insightTexts, cached: false });
     } catch (genError) {
       console.error("insight generation failed:", genError);
 
-      if (user.insightText) {
-        return NextResponse.json({ insight: user.insightText, cached: true, stale: true });
+      if (user.insightTexts && user.insightTexts.length > 0) {
+        return NextResponse.json({ insights: user.insightTexts, cached: true, stale: true });
       }
-      return NextResponse.json({ insight: null, reason: "generation_failed" });
+      return NextResponse.json({ insights: null, reason: "generation_failed" });
     }
   } catch (error) {
     console.error("insight GET error:", error);

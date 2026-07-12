@@ -92,7 +92,7 @@ export default function SynapseApp() {
   const [profile, setProfile] = useState<Profile>({ name: "alex rivera", username: "alexrivera", email: "alex@synapse.app", bio: "" });
   const [draftProfile, setDraftProfile] = useState<Profile | null>(null);
   const [accountSaved, setAccountSaved] = useState(false);
-  const [insight, setInsight] = useState<string | null>(null);
+  const [insights, setInsights] = useState<string[] | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
 
   const [todosEditMode, setTodosEditMode] = useState(false);
@@ -251,10 +251,10 @@ export default function SynapseApp() {
     try {
       const response = await fetch(`/api/insight?userId=${encodeURIComponent(id)}`);
       const data = await response.json();
-      setInsight(response.ok && data.insight ? data.insight : null);
+      setInsights(response.ok && Array.isArray(data.insights) && data.insights.length > 0 ? data.insights : null);
     } catch (err) {
       console.error("fetchInsight failed:", err);
-      setInsight(null);
+      setInsights(null);
     } finally {
       setInsightLoading(false);
     }
@@ -838,7 +838,7 @@ export default function SynapseApp() {
           todos={todos}
           todosEditMode={todosEditMode}
           selectedTodoIds={selectedTodoIds}
-          insight={insight}
+          insights={insights}
           insightLoading={insightLoading}
           onGoStream={goStream}
           onToggleEditMode={toggleTodosEditMode}
