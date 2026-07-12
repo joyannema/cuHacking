@@ -545,7 +545,7 @@ export default function SynapseApp() {
                   tags: classified?.tags ?? n.tags,
                   mood: classified?.mood ?? n.mood,
                   isTodo: classified?.is_todo === true,
-                  todoText: classified?.title ?? n.todoText,
+                  todoText: typeof classified?.title === "string" ? classified.title.toLowerCase() : n.todoText,
                   colorIdx: colorIdxForCategory(classified?.category ?? n.category),
                   classifying: false,
                 }
@@ -577,7 +577,7 @@ export default function SynapseApp() {
             tags: classified?.tags ?? newNote.tags,
             mood: classified?.mood ?? newNote.mood,
             isTodo: classified?.is_todo === true,
-            todoText: classified?.title ?? newNote.todoText,
+            todoText: typeof classified?.title === "string" ? classified.title.toLowerCase() : newNote.todoText,
             colorIdx: colorIdxForCategory(classified?.category ?? newNote.category),
           }),
         });

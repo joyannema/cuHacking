@@ -19,7 +19,8 @@ export async function POST(req: Request) {
     }
 
     const userObjectId = new ObjectId(userId);
-    const label = CATEGORY_LABELS[category as CategorySlug] || category;
+    const normalizedCategory = category.toLowerCase();
+    const label = CATEGORY_LABELS[normalizedCategory as CategorySlug] || normalizedCategory;
 
     const categories = await getCategoriesCollection();
     const categoryResult = await categories.findOneAndUpdate(
@@ -32,13 +33,13 @@ export async function POST(req: Request) {
     const noteDoc = {
       userId: userObjectId,
       categoryId: categoryResult?._id ?? null,
-      category,
+      category: normalizedCategory,
       title: typeof title === "string" ? title : undefined,
       text,
       tags: Array.isArray(tags) ? tags.filter((t) => typeof t === "string") : [],
       mood: isMood(mood) ? mood : null,
       isTodo: isTodo === true,
-      todoText: typeof todoText === "string" ? todoText : null,
+      todoText: typeof todoText === "string" ? todoText.toLowerCase() : null,
       todoDone: false,
       photo: false,
       colorIdx: typeof colorIdx === "number" ? colorIdx : 0,

@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
 
     const classified = await classifyTranscript(transcript, existingCategories);
     if (!isMood(classified.mood)) classified.mood = "neutral";
+    if (typeof classified.category === "string") classified.category = classified.category.toLowerCase();
 
     return NextResponse.json({ transcript, ...classified });
   } catch (err: unknown) {
